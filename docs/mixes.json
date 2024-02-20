@@ -1,0 +1,187 @@
+[
+  {
+      "mix_name": "Revenue_Geography",
+      "insight": "Revenue",
+      "mix": "Geography",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Revenue of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Total sales in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Buyers_Geography",
+      "insight": "Buyer",
+      "mix": "Geography",
+      "operation": "count",
+      "depends": "False",
+      "example": "Total Unique Customer Name of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Unique customer count in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Average_Realization_Per_Buyer_Geography",
+      "insight": "Revenue",
+      "mix_dependent": "Buyer",
+      "mix": "Geography",
+      "operation": "sum",
+      "depends": "True",
+      "example": "Revenue of Apr21 of MP & Chhattisgarh divided by Buyers of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Average revenue generated per buyer in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Volume_Geography",
+      "insight": "Volume",
+      "mix": "Geography",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Volume of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Total volume of sales in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Transactions_Geography",
+      "insight": "Transaction number",
+      "mix": "Geography",
+      "operation": "count",
+      "depends": "False",
+      "example": "Total Unique Transaction number of Apr21 of Mp & Chhattisgarh",
+      "meta-data": "Total unique transactions in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Average_Realization_Per_Transaction_Geography",
+      "insight": "Revenue",
+      "mix_dependent": "Transaction number",
+      "mix": "Geography",
+      "operation": "sum",
+      "depends": "True",
+      "example": "Revenue of Apr21 of MP & Chhattisgarh divided by Transaction of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Average realization per transaction in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Gross_Profits_Geography",
+      "insight": "Gross Profit",
+      "mix": "Geography",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Gross Profit of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Total gross profits in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Gross_Margins_Geography",
+      "insight": "Gross Margin",
+      "mix": "Geography",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Gross Profit of Apr21 of MP & Chhattisgarh divided by Revenue of Apr21 of MP & Chhattisgarh",
+      "meta-data": "Gross margins in MP & Chhattisgarh for April 2021"
+  },
+  {
+      "mix_name": "Revenue_Category",
+      "insight": "Revenue",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Revenue of Apr21 of Wheat",
+      "meta-data": "Total sales revenue from Wheat for April 2021"
+  },
+  {
+      "mix_name": "Buyers_Category",
+      "insight": "Buyer",
+      "mix": "Category",
+      "operation": "count",
+      "depends": "False",
+      "example": "Total Unique Customer Name of Apr21 of Wheat",
+      "meta-data": "Unique customer count in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Average_Realization_Per_Buyer_Category",
+      "insight": "Revenue",
+      "mix_dependent": "Buyer",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "True",
+      "example": "Revenue of Apr21 of Wheat divided by Buyers of Apr21 of Wheat",
+      "meta-data": "Average revenue generated per buyer in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Volume_Category",
+      "insight": "Volume",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Volume of Apr21 of Wheat",
+      "meta-data": "Total volume of sales in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Transactions_Category",
+      "insight": "Transaction number",
+      "mix": "Category",
+      "operation": "count",
+      "depends": "False",
+      "example": "Total Unique Transaction number of Apr21 of Wheat",
+      "meta-data": "Total unique transactions in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Average_Realization_Per_Transaction_Category",
+      "insight": "Revenue",
+      "mix_dependent": "Transaction number",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "True",
+      "example": "Revenue of Apr21 of Wheat divided by Transaction of Apr21 of Wheat",
+      "meta-data": "Average realization per transaction in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Gross_Profits_Category",
+      "insight": "Gross Profit",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Gross Profit of Apr21 of Wheat",
+      "meta-data": "Total gross profits in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Gross_Margins_Category",
+      "insight": "Gross Margin",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Gross Profit of Apr21 of Wheat divided by Revenue of Apr21 of Wheat",
+      "meta-data": "Gross margins in Wheat for April 2021"
+  },
+  {
+      "mix_name": "Revenue_Commodity",
+      "insight": "Revenue",
+      "mix": "Buyer",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Revenue of Apr21 of Enterprise",
+      "meta-data": "Total sales revenue from Enterprise customers for April 2021"
+  },
+  {
+      "mix_name": "Volume_Commodity",
+      "insight": "Volume",
+      "mix": "Buyer",
+      "operation": "sum",
+      "depends": "False",
+      "example": "Volume of Apr21 of Enterprise",
+      "meta-data": "Total volume of sales in Enterprise for April 2021"
+  },
+  {
+      "mix_name": "Transactions_Commodity",
+      "insight": "Transaction number",
+      "mix": "Buyer",
+      "operation": "count",
+      "depends": "False",
+      "example": "Total Unique Transaction number of Apr21 of Enterprise",
+      "meta-data": "Total unique transactions in Enterprise for April 2021"
+  },
+  {
+      "mix_name": "Average_Realization_Per_Transaction_Category",
+      "insight": "Revenue",
+      "mix_dependent": "Transaction number",
+      "mix": "Category",
+      "operation": "sum",
+      "depends": "True",
+      "example": "Revenue of Apr21 of Enterprise divided by Transaction of Apr21 of Enterprise",
+      "meta-data": "Average realization per transaction in Enterprise for April 2021"
+  }
+]

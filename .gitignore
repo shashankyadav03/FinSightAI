@@ -1,0 +1,10 @@
+#Add files for gitignore
+echo "node_modules" >> .gitignore
+echo "dist" >> .gitignore
+echo "coverage" >> .gitignore
+echo "package-lock.json" >> .gitignore
+echo "yarn.lock" >> .gitignore
+echo "yarn-error.log" >> .gitignore
+echo "npm-debug.log" >> .gitignore
+data/.DS_Store
+.DS_Store
