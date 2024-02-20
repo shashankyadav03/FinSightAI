@@ -11,7 +11,7 @@ FinSightAI is a cutting-edge financial forecasting model leveraging the power of
 ## Getting Started
 1. **Clone the Repository**
    ```
-   git clone https://github.com/<your-username>/FinSightAI.git
+   git clone https://github.com/shashankyadav03/FinSightAI.git
    cd FinSightAI
    ```
 
