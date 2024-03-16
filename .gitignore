@@ -8,3 +8,5 @@ echo "yarn-error.log" >> .gitignore
 echo "npm-debug.log" >> .gitignore
 data/.DS_Store
 .DS_Store
+finsightai/*
+notebooks/test/distilbert/*
