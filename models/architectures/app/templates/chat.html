@@ -1,0 +1,23 @@
+<!-- templates/chat.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Model</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Chat with Model</h1>
+        <div id="chat-box"></div>
+        <form id="chat-form">
+            <label for="user-input">Your Message:</label>
+            <textarea id="user-input" name="user-input" rows="3" required></textarea>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

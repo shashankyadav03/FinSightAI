@@ -1,29 +1,28 @@
-from transformers import GPT2LMHeadModel, GPT2Tokenizer, Trainer, TrainingArguments
+# app/finetune.py
 
-def finetune_model(data):
-    # Example logic for finetuning
-    model_name = "gpt2"
-    model = GPT2LMHeadModel.from_pretrained(model_name)
-    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+from flask import request, jsonify
+import pandas as pd
+FROM_REMOTE=True
 
-    # Load and preprocess data here
-    # ...
+base_model = 'llama2'
+peft_model = 'FinGPT/fingpt-mt_llama2-7b_lora' if FROM_REMOTE else 'finetuned_models/MT-llama2-linear_202309210126'
 
-    training_args = TrainingArguments(
-        output_dir='./results',
-        num_train_epochs=1,
-        per_device_train_batch_size=2,
-        save_steps=10_000,
-        save_total_limit=2,
-    )
+# model, tokenizer = load_model(base_model, peft_model, FROM_REMOTE)
 
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset="train_dataset",
-        eval_dataset="eval_dataset",
-    )
-
-    trainer.train()
-    return {"status": "Model fine-tuned successfully"}
-
+def fine_tune():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    try:
+        data = pd.read_csv(file)
+        # Perform data preprocessing if needed
+        # data = preprocess(data)
+        
+        # Fine-tune the model
+        # model.fine_tune(data)
+        return jsonify({"message": "Model fine-tuned successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

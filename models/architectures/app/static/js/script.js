@@ -1,36 +1,60 @@
+// static/js/script.js
+
+// static/js/script.js
+
 document.addEventListener('DOMContentLoaded', () => {
     const finetuneForm = document.getElementById('finetune-form');
-    const verifyForm = document.getElementById('verify-form');
+    const messageDiv = document.getElementById('message');
 
-    if (finetuneForm) {
-        finetuneForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const data = document.getElementById('finetune-data').value;
+    finetuneForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        messageDiv.innerHTML = '';
+
+        const formData = new FormData(finetuneForm);
+        try {
             const response = await fetch('/finetune', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ data }),
+                body: formData
             });
             const result = await response.json();
-            document.getElementById('finetune-result').innerText = JSON.stringify(result, null, 2);
-        });
-    }
+            if (response.ok) {
+                messageDiv.innerHTML = `<p class="success">${result.message}</p>`;
+            } else {
+                messageDiv.innerHTML = `<p class="error">${result.error}</p>`;
+            }
+        } catch (error) {
+            messageDiv.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+        }
+    });
+});
 
-    if (verifyForm) {
-        verifyForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const data = document.getElementById('verify-data').value;
+document.addEventListener('DOMContentLoaded', () => {
+    const verifyForm = document.getElementById('verify-form');
+    const resultsDiv = document.getElementById('results');
+
+    verifyForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        resultsDiv.innerHTML = '';
+
+        const formData = new FormData(verifyForm);
+        const input = formData.get('input');
+        try {
             const response = await fetch('/verify', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ data }),
+                body: JSON.stringify({ input })
             });
             const result = await response.json();
-            document.getElementById('verify-result').innerText = JSON.stringify(result, null, 2);
-        });
-    }
+            if (response.ok) {
+                resultsDiv.innerHTML = `<pre class="success">${JSON.stringify(result.results, null, 2)}</pre>`;
+            } else {
+                resultsDiv.innerHTML = `<p class="error">${result.error}</p>`;
+            }
+        } catch (error) {
+            resultsDiv.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+        }
+    });
 });
+

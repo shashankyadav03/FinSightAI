@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fine-tune FinGPT</title>
+    <title>Fine-Tune Model</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>Fine-tune FinGPT</h1>
-    <form id="finetune-form">
-        <label for="finetune-data">Enter data for fine-tuning:</label><br>
-        <textarea id="finetune-data" name="data" rows="10" cols="50"></textarea><br>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="finetune-result"></div>
+    <div class="container">
+        <h1>Fine-Tune Model</h1>
+        <form id="finetune-form" action="/finetune" method="post" enctype="multipart/form-data">
+            <label for="file">Upload CSV File:</label>
+            <input type="file" id="file" name="file" accept=".csv" required>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="message"></div>
+    </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

@@ -1,19 +1,23 @@
+<!-- templates/verify.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify FinGPT Output</title>
+    <title>Verify Model</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>Verify FinGPT Output</h1>
-    <form id="verify-form">
-        <label for="verify-data">Enter data for verification:</label><br>
-        <textarea id="verify-data" name="data" rows="10" cols="50"></textarea><br>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="verify-result"></div>
+    <div class="container">
+        <h1>Verify Model</h1>
+        <form id="verify-form" method="post">
+            <label for="input">Enter News Text:</label>
+            <textarea id="input" name="input" rows="10" required>{{ output }}</textarea>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="results"></div>
+    </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
