@@ -11,3 +11,6 @@ sqlalchemy
 psycopg2-binary
 pymongo 
 requests
+flask
+flask-cors
+python-dotenv

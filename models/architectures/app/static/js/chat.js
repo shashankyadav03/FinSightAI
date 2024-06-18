@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const userMessage = userInput.value.trim();
         if (userMessage) {
-            addMessage('You', userMessage);
+            addMessage('You', userMessage, 'user-message');
             userInput.value = '';
             try {
                 const response = await fetch('/chat', {
@@ -21,21 +21,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await response.json();
                 if (response.ok) {
-                    addMessage('Model', result.response, result.id);
+                    addMessage('Model', result.response, 'model-message');
                 } else {
-                    addMessage('Error', result.error);
+                    addMessage('Error', result.error, 'error-message');
                 }
             } catch (error) {
-                addMessage('Error', 'An error occurred: ' + error.message);
+                addMessage('Error', 'An error occurred: ' + error.message, 'error-message');
             }
         }
     });
 
-    function addMessage(sender, message, id) {
+    function addMessage(sender, message, className) {
         const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
+        messageElement.classList.add('message', className);
         messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
-        if (sender === 'Model' && id) {
+        if (sender === 'Model') {
             const verifyButton = document.createElement('button');
             verifyButton.innerText = 'Verify';
             verifyButton.onclick = () => {

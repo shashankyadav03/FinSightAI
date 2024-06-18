@@ -9,3 +9,4 @@ echo "npm-debug.log" >> .gitignore
 data/.DS_Store
 .DS_Store
 env/*
+.env

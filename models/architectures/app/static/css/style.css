@@ -111,11 +111,29 @@ pre {
 
 .message {
     margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 60%;
+    word-wrap: break-word;
 }
 
-.message strong {
-    display: block;
-    margin-bottom: 5px;
+.user-message {
+    background-color: #d1e7dd;
+    align-self: flex-end;
+    text-align: right;
+}
+
+.model-message {
+    background-color: #f8d7da;
+    align-self: flex-start;
+    text-align: left;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+    align-self: flex-start;
 }
 
 .message button {
