@@ -10,3 +10,6 @@ data/.DS_Store
 .DS_Store
 env/*
 .env
+models/architectures/utilities/cache/*
+models/architectures/utilities/cache_news/*
+models/architectures/utilities/data/*
