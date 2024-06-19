@@ -1,0 +1,1 @@
+{"id": "chatcmpl-9behGYSJ7AoGJL0wB6s2Rtj3ezfDP", "object": "chat.completion", "created": 1718761602, "model": "gpt-3.5-turbo-0125", "choices": [{"index": 0, "message": {"role": "assistant", "content": "Cryptocurrency"}, "logprobs": null, "finish_reason": "stop"}], "usage": {"prompt_tokens": 39, "completion_tokens": 2, "total_tokens": 41}, "system_fingerprint": null}

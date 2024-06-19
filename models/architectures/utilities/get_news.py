@@ -1,37 +1,82 @@
 import requests
 import json
+import os
+import hashlib
 import pandas as pd
+from dotenv import load_dotenv
+import logging
 
-# Replace with your actual NewsAPI key
-API_KEY = '25757eb42ae7439cb712fb91c1c57398'
-industries = ['finance']
+log = logging.getLogger(__name__)
 
-def fetch_news(industry, api_key):
-    url = (f'https://newsapi.org/v2/everything?q={industry}&'
-           'language=en&sortBy=publishedAt&apiKey=' + api_key)
+def get_cache_filename(query):
+    """Generate a filename for the cache based on the query."""
+    hash_object = hashlib.md5(query.encode())
+    cache_filename = f"cache_{hash_object.hexdigest()}.json"
+    return os.path.join('utilities/cache_news', cache_filename)
+
+def get_api_key():
+    load_dotenv()  # Load environment variables from the .env file
+    return os.getenv('news_api_key')
+
+def fetch_news(query, use_cache=True):
+    """Fetch news articles related to a specific query using NewsAPI."""
+    api_key = get_api_key()
+    cache_filename = get_cache_filename(query)
+
+    # Check if cache exists and is valid
+    if use_cache and os.path.exists(cache_filename):
+        with open(cache_filename, 'r') as cache_file:
+            cached_data = json.load(cache_file)
+            print(f"Using cached data for query: {query}")
+            return cached_data
+
+    # Fetch from NewsAPI if no cache or cache is invalid
+    url = f'https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&apiKey={api_key}'
     response = requests.get(url)
     data = response.json()
-    print(f"Fetched {len(data['articles'])} articles for {industry}.")
+    if response.status_code != 200 or 'articles' not in data:
+        raise Exception(f"Failed to fetch news: {data.get('message', 'Unknown error')}")
+    print(f"Fetched {len(data['articles'])} articles for query: {query}.")
+
+    # Save fetched data to cache
+    with open(cache_filename, 'w') as cache_file:
+        json.dump(data, cache_file)
+
     return data
 
-# Fetch and store news data for each industry
-for industry in industries:
-    news_data = fetch_news(industry, API_KEY)
-    with open(f'{industry}_news.json', 'w') as f:
+def save_news_to_file(news_data, filename):
+    """Save news data to a JSON file."""
+    with open(filename, 'w') as f:
         json.dump(news_data, f)
-    print(f"Saved {industry} news data.")
+    print(f"Saved news data to {filename}.")
 
-# Load data into a pandas DataFrame for processing
-df_list = []
-for industry in industries:
-    with open(f'{industry}_news.json') as f:
+def load_news_from_file(filename):
+    """Load news data from a JSON file and return as a pandas DataFrame."""
+    with open(filename) as f:
         data = json.load(f)
         articles = data.get('articles', [])
         df = pd.DataFrame(articles)
-        df['industry'] = industry
-        df_list.append(df)
+    return df
 
-news_df = pd.concat(df_list, ignore_index=True)
+def process_news_data(query, use_cache=True):
+    """Fetch, save, and process news data for given queries."""
+    news_data = fetch_news(query, use_cache)
+    filename = os.path.join('utilities/data', f"{query}_news.json")
+    save_news_to_file(news_data, filename)
+    df = load_news_from_file(filename)
+    df['query'] = query
+    return df
 
-# Display the first few rows of the DataFrame
-print(news_df.head())
+def run_news_api(queries):
+    """Run the news data processing pipeline."""
+    # Ensure directories exist
+    os.makedirs('utilities/cache_news', exist_ok=True)
+    os.makedirs('utilities/data', exist_ok=True)
+    
+    news_df = process_news_data(queries)
+    log.info(f"Processed news data for {len(news_df)} articles.")
+    return news_df
+
+# run_news_api('bitcoin')
+
+    

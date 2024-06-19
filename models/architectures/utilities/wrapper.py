@@ -37,22 +37,22 @@ def get_api_key():
     load_dotenv()  # Load environment variables from the .env file
     return os.getenv('openai_api_key')
 
-def get_prompt(prompt_content):
+def get_prompt(prompt_content,system_message):
     prompt = [
         {'role': 'user', 'content': prompt_content},
-        {'role': 'system', 'content': 'Reply in one line'}
+        {'role': 'system', 'content': system_message}
     ]
     return prompt
 
 def write_response_to_cache(prompt_hash, response):
-    cache_dir = 'models/utilities/cache'
+    cache_dir = 'utilities/cache'
     os.makedirs(cache_dir, exist_ok=True)
     cache_path = os.path.join(cache_dir, f'{prompt_hash}.json')
     with open(cache_path, 'w') as outfile:
         json.dump(response, outfile)
 
 def read_response_from_cache(prompt_hash):
-    cache_path = os.path.join('models/utilities/cache', f'{prompt_hash}.json')
+    cache_path = os.path.join('utilities/cache', f'{prompt_hash}.json')
     if os.path.exists(cache_path):
         with open(cache_path) as json_file:
             return json.load(json_file)
@@ -65,9 +65,9 @@ def get_message_content(data):
     return data['choices'][0]['message']['content']
 
 # Test OpenAI API
-def openai_api(prompt_content):
+def openai_api(prompt_content,system_message):
     api_key = get_api_key()
-    prompt = get_prompt(prompt_content)
+    prompt = get_prompt(prompt_content,system_message)
     prompt_hash = hash_prompt(prompt_content)
     
     # Check cache first
@@ -85,8 +85,8 @@ def openai_api(prompt_content):
     print(message_content)
     return message_content
 
-def run_openai_api(prompt_content):
-    message_content = openai_api(prompt_content)
+def run_openai_api(prompt_content, system_message):
+    message_content = openai_api(prompt_content,system_message)
     return message_content
 
 # Example usage

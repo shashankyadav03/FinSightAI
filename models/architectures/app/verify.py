@@ -1,38 +1,60 @@
-# app/verify.py
-
 from flask import request, jsonify
-import pandas as pd
+import os
+from utilities.get_news import run_news_api
+from utilities.wrapper import run_openai_api
 
-FROM_REMOTE=True
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import logging
 
-base_model = 'llama2'
-peft_model = 'FinGPT/fingpt-mt_llama2-7b_lora' if FROM_REMOTE else 'finetuned_models/MT-llama2-linear_202309210126'
+log = logging.getLogger(__name__)
 
-# model, tokenizer = load_model(base_model, peft_model, FROM_REMOTE)
+
+def calculate_similarity(text1, text2):
+    """Calculate cosine similarity between two texts."""
+    vectorizer = TfidfVectorizer().fit_transform([text1, text2])
+    vectors = vectorizer.toarray()
+    cosine_sim = cosine_similarity(vectors)
+    return cosine_sim[0, 1]
 
 def verify():
     try:
-        data = request.get_json()
-        # Assume data contains the input for verification
-        # input_data = data['input']
+        news = request.get_data(as_text=True) 
+        if not news:
+            return jsonify({"error": "No news provided"}), 400
+        log.info(f"Received news: {news}")
+        # Fetch news articles related to the title, using cache
+        title = run_openai_api(news,"Give me one main word for this news article.")
+        print(title)
+        news_df = run_news_api(title)
+        top_5_news_articles = news_df.head(5)
+        news_articles = top_5_news_articles.to_dict(orient='records')
+        print(news_articles)
+        # Get OpenAI response
+        openai_response = news
+        # Calculate similarity for each article title with the OpenAI response
         
-        # Load the fine-tuned model
-        # results = model.verify(data)
-        results = verify_output(data)
-        return jsonify({"results": results}), 200
+        similarities = []
+        for article in news_articles:  # Consider top 5 articles
+            if isinstance(article['title'], str):  # Ensure the title is a string
+                similarity = calculate_similarity(openai_response, article['title'])
+                similarities.append({
+                    'title': article['title'],
+                    'description': article.get('description', ''),
+                    'url': article['url'],
+                    'similarity': similarity
+                })
+
+        # Calculate average similarity
+        avg_similarity = sum([sim['similarity'] for sim in similarities]) / len(similarities) if similarities else 0
+
+        verification_results = {
+            "openai_response": openai_response,
+            "related_articles": similarities,
+            "average_similarity": avg_similarity
+        }
+        
+        return jsonify({"results": verification_results}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-def verify_output(data):
-    # Example logic for verification
-    # This could involve statistical checks, cross-referencing with known data, etc.
-    # ...
 
-    verification_results = {
-        "accuracy": 0.95,
-        "other_metrics": {
-            "precision": 0.93,
-            "recall": 0.92
-        }
-    }
-    return verification_results
