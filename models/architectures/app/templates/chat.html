@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container">
+    <div class="chat-body">
+    <div class="chat-container">
         <h1>Chat with Model</h1>
         <div id="chat-box" style="display: flex; flex-direction: column;"></div>
         <form id="chat-form">
@@ -17,6 +18,7 @@
             <textarea id="user-input" name="user-input" rows="3" required></textarea>
             <button type="submit">Send</button>
         </form>
+    </div>
     </div>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>

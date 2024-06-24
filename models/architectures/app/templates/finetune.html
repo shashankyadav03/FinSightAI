@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container">
+    <div class="chat-body">
+    <div class="chat-container">
         <h1>Fine-Tune Model</h1>
         <form id="finetune-form" action="/finetune" method="post" enctype="multipart/form-data">
             <label for="file">Upload CSV File:</label>
@@ -15,6 +16,7 @@
             <button type="submit">Submit</button>
         </form>
         <div id="message"></div>
+    </div>
     </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

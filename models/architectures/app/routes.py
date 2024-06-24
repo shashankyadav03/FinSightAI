@@ -3,6 +3,7 @@ from .finetune import fine_tune
 from .verify import verify
 from .chat import chat_with_model
 import logging
+from .finetune import chat2
 
 log = logging.getLogger(__name__)
 main = Blueprint('main', __name__)
@@ -28,7 +29,7 @@ def verify_route():
 @main.route('/chat', methods=['GET', 'POST'])
 def chat_route():
     if request.method == 'POST':
-        return chat_with_model()
+        return chat2()
     return render_template('chat.html')
 
 @main.app_errorhandler(404)

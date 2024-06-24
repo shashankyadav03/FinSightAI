@@ -14,3 +14,4 @@ requests
 flask
 flask-cors
 python-dotenv
+peft

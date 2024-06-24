@@ -24,7 +24,7 @@ def verify():
             return jsonify({"error": "No news provided"}), 400
         log.info(f"Received news: {news}")
         # Fetch news articles related to the title, using cache
-        title = run_openai_api(news,"Give me minimum words title for this news article.")
+        title = run_openai_api(news,"Give two words title for this news article.")
         print(title)
         news_df = run_news_api(title)
         top_5_news_articles = news_df.head(5)

@@ -13,3 +13,4 @@ env/*
 models/architectures/utilities/cache/*
 models/architectures/utilities/cache_news/*
 models/architectures/utilities/data/*
+models/architectures/finetuned_model/*
