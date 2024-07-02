@@ -7,6 +7,7 @@ from flask_login import LoginManager, login_user, UserMixin, login_required, log
 from ..models.models import Users
 from ..models.forms import RegistrationForm, LoginForm
 from .. import db
+from flask import flash
 
 log = logging.getLogger(__name__)
 main = Blueprint('main', __name__)
@@ -29,50 +30,54 @@ def index():
     return render_template('index.html')
 
 # Define register route
-@main.route('/register', methods=['POST'])
-def register():
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        user_data = form.data
-
-        # Check if user already exists
-        existing_user = Users.query.filter_by(email=user_data['email']).first()
-        if existing_user:
-            return jsonify({"error": "User already exists."}), 400
-
-        # Create new user
-        new_user = Users(username=user_data['username'], email=user_data['email'])
-        new_user.set_password(user_data['password'])
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({"message": "User created successfully."}), 201
-    else:
-        return jsonify({"errors": form.errors}), 400
-
-@main.route('/login', methods=['POST'])
+@main.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    if form.validate_on_submit():
-        user_data = form.data
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            user_data = form.data
 
-        # Check if user exists
-        user = Users.query.filter_by(email=user_data['email']).first()
-        if not user or not user.check_password(user_data['password']):
-            return jsonify({"error": "Invalid email or password."}), 400
+            user = Users.query.filter_by(email=user_data['email']).first()
+            if not user or not user.check_password(user_data['password']):
+                return jsonify({"error": "Invalid email or password."}), 400
 
-        # Log user in
-        login_user(user)
-        return jsonify({"message": "User logged in successfully."}), 200
-    else:
-        return jsonify({"errors": form.errors}), 400
+            login_user(user)
+            flash('User logged in successfully.', 'success')
+            return render_template('index.html'), 200
+        else:
+            return jsonify({"errors": form.errors}), 400
 
+    return render_template('login.html', form=form)
+
+@main.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            user_data = form.data
+
+            existing_user = Users.query.filter_by(email=user_data['email']).first()
+            if existing_user:
+                return jsonify({"error": "User already exists."}), 400
+
+            new_user = Users(username=user_data['username'], email=user_data['email'])
+            new_user.set_password(user_data['password'])
+            db.session.add(new_user)
+            db.session.commit()
+            # flash user for 5 seconds
+            flash('User created successfully.', 'success')
+            return render_template('index.html'), 201
+        else:
+            return jsonify({"errors": form.errors}), 400
+
+    return render_template('register.html', form=form)
 
     
 @main.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return jsonify({"message": "User logged out successfully."}), 200
+    return render_template('index.html')
 
 @main.route('/finetune', methods=['GET', 'POST'])
 @login_required
