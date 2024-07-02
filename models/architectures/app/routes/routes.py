@@ -5,9 +5,10 @@ from ..services.chat import chat_with_model
 import logging
 from ..services.finetune import chat2
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user
-from models.models import Users
+from ..models.models import Users
 from models import db
 from flask_login import login_user
+from models.forms import LoginForm, RegisterationForm
 
 log = logging.getLogger(__name__)
 main = Blueprint('main', __name__)
@@ -34,30 +35,33 @@ def index():
 def register():
     try:
         # Ensure JSON payload is present
-        user_data = request.get_json()
-        if not user_data:
-            return jsonify({"error": "Invalid request format. JSON required."}), 400
+        form = RegisterationForm()
+        if form.validate_on_submit():
 
-        # Check required fields
-        required_fields = ['username', 'email', 'password', 'confirm_password']
-        if not all(field in user_data for field in required_fields):
-            return jsonify({"error": "Missing required fields."}), 400
-        
-        # Check if password and confirm_password match
-        if user_data['password'] != user_data['confirm_password']:
-            return jsonify({"error": "Passwords do not match."}), 400
-        
-        # Check if user already exists
-        existing_user = Users.query.filter_by(email=user_data['email']).first()
-        if existing_user:
-            return jsonify({"error": "User already exists."}), 400
-        
-        # Create new user
-        new_user = Users(username=user_data['username'], email=user_data['email'])
-        new_user.set_password(user_data['password'])
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({"message": "User created successfully."}), 201
+            user_data = form.data
+            if not user_data:
+                return jsonify({"error": "Invalid request format. JSON required."}), 400
+
+            # Check required fields
+            required_fields = ['username', 'email', 'password', 'confirm_password']
+            if not all(field in user_data for field in required_fields):
+                return jsonify({"error": "Missing required fields."}), 400
+            
+            # Check if password and confirm_password match
+            if user_data['password'] != user_data['confirm_password']:
+                return jsonify({"error": "Passwords do not match."}), 400
+            
+            # Check if user already exists
+            existing_user = Users.query.filter_by(email=user_data['email']).first()
+            if existing_user:
+                return jsonify({"error": "User already exists."}), 400
+            
+            # Create new user
+            new_user = Users(username=user_data['username'], email=user_data['email'])
+            new_user.set_password(user_data['password'])
+            db.session.add(new_user)
+            db.session.commit()
+            return jsonify({"message": "User created successfully."}), 201
     except Exception as e:
         log.error('Error creating user: %s', e)
         return jsonify({"error": "An error occurred while creating user."}), 500
@@ -65,24 +69,26 @@ def register():
 @main.route('/login', methods=['POST'])
 def login():
     try:
+        form = LoginForm()
+        if form.validate_on_submit():
         # Ensure JSON payload is present
-        user_data = request.get_json()
-        if not user_data:
-            return jsonify({"error": "Invalid request format. JSON required."}), 400
+            user_data = form.data
+            if not user_data:
+                return jsonify({"error": "Invalid request format. JSON required."}), 400
 
-        # Check required fields
-        required_fields = ['email', 'password']
-        if not all(field in user_data for field in required_fields):
-            return jsonify({"error": "Missing required fields."}), 400
-        
-        # Check if user exists
-        user = Users.query.filter_by(email=user_data['email']).first()
-        if not user or not user.check_password(user_data['password']):
-            return jsonify({"error": "Invalid email or password."}), 400
-        
-        # Log user in
-        login_user(user)
-        return jsonify({"message": "User logged in successfully."}), 200
+            # Check required fields
+            required_fields = ['email', 'password']
+            if not all(field in user_data for field in required_fields):
+                return jsonify({"error": "Missing required fields."}), 400
+            
+            # Check if user exists
+            user = Users.query.filter_by(email=user_data['email']).first()
+            if not user or not user.check_password(user_data['password']):
+                return jsonify({"error": "Invalid email or password."}), 400
+            
+            # Log user in
+            login_user(user)
+            return jsonify({"message": "User logged in successfully."}), 200
     except Exception as e:
         log.error('Error logging in user: %s', e)
         return jsonify({"error": "An error occurred while logging in user."}), 500
