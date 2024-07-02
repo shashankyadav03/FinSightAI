@@ -3,6 +3,9 @@ import requests
 import os
 from dotenv import load_dotenv
 import hashlib
+import logging
+
+log = logging.getLogger(__name__)
 
 def call_openai_api(prompt, api_key):
     url = "https://api.openai.com/v1/chat/completions"
@@ -15,7 +18,7 @@ def call_openai_api(prompt, api_key):
     data = {
         'messages': prompt,
         'max_tokens': 100,
-        'model': 'gpt-3.5-turbo-0125',
+        'model': 'gpt-4o',
         'temperature': 0
     }
 
@@ -62,6 +65,7 @@ def hash_prompt(prompt_content):
     return hashlib.md5(prompt_content.encode()).hexdigest()
 
 def get_message_content(data):
+    print(data)
     return data['choices'][0]['message']['content']
 
 # Test OpenAI API
@@ -86,6 +90,7 @@ def openai_api(prompt_content,system_message):
     return message_content
 
 def run_openai_api(prompt_content, system_message):
+    log.info(f"Prompt: {prompt_content}")
     message_content = openai_api(prompt_content,system_message)
     return message_content
 

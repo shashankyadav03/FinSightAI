@@ -15,3 +15,8 @@ flask
 flask-cors
 python-dotenv
 peft
+flask-login
+flask-sqlalchemy
+flask-wtf
+wtforms
+

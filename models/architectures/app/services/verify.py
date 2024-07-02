@@ -25,11 +25,12 @@ def verify():
         log.info(f"Received news: {news}")
         # Fetch news articles related to the title, using cache
         title = run_openai_api(news,"Give two words title for this news article.")
-        print(title)
+        log.info(f"Title: {title}")
         news_df = run_news_api(title)
         top_5_news_articles = news_df.head(5)
         news_articles = top_5_news_articles.to_dict(orient='records')
         print(news_articles)
+        log.info(f"Top 5 news articles: {news_articles}")
         # Get OpenAI response
         openai_response = news
         # Calculate similarity for each article title with the OpenAI response

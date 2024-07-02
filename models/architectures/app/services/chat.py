@@ -16,7 +16,7 @@ def chat_with_model():
             return jsonify({"error": "No message provided"}), 400
 
         # Interact with the OpenAI API
-        response= run_openai_api(user_message,"Reply in 1 line")
+        response= run_openai_api(user_message,"Give news in 1 line")
         log.info(response)
         return jsonify({"response": response}), 200
     except Exception as e:

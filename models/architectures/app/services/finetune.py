@@ -108,6 +108,9 @@ def chat2():
     tokenizer, model = load_finetuned_model()
     response = generate_response(model, tokenizer, user_message)
     return jsonify({"response": response}), 200
+
+
+
 # from flask import Flask, request, jsonify
 # import pandas as pd
 # import os
