@@ -8,7 +8,7 @@ def create_app():
 
     db = SQLAlchemy(app)
 
-    from .services.routes import main
+    from .routes.routes import main
     app.register_blueprint(main)
 
     return app

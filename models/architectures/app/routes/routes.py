@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify, render_template
-from .finetune import fine_tune
-from .verify import verify
-from .chat import chat_with_model
+from ..services.finetune import fine_tune
+from ..services.verify import verify
+from ..services.chat import chat_with_model
 import logging
-from .finetune import chat2
+from ..services.finetune import chat2
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user
 from models.models import Users
 from models import db
