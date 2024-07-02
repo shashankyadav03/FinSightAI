@@ -6,9 +6,9 @@ import logging
 from ..services.finetune import chat2
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user
 from ..models.models import Users
-from models import db
 from flask_login import login_user
-from models.forms import LoginForm, RegisterationForm
+from ..models.forms import RegistrationForm, LoginForm
+from .. import db
 
 log = logging.getLogger(__name__)
 main = Blueprint('main', __name__)
@@ -35,7 +35,7 @@ def index():
 def register():
     try:
         # Ensure JSON payload is present
-        form = RegisterationForm()
+        form = RegistrationForm()
         if form.validate_on_submit():
 
             user_data = form.data
