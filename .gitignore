@@ -16,3 +16,10 @@ models/architectures/utilities/data/*
 models/architectures/finetuned_model/*
 finsightai/*
 *.pyc
+FinGPT/20061020_20131126_bloomberg_news.tar
+FinGPT/FinNLP/
+FinGPT/finetuned_model/
+FinGPT/runs/
+data/
+notebooks/.ipynb_checkpoints/
+notebooks/test/*
