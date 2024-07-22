@@ -23,3 +23,4 @@ FinGPT/runs/
 data/
 notebooks/.ipynb_checkpoints/
 notebooks/test/*
+notebooks/MNIST/
