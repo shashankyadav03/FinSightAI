@@ -1,10 +1,17 @@
+<div align="center">
+<img align="center" width="30%" alt="image" src="https://github.com/AI4Finance-Foundation/FinGPT/assets/31713746/e0371951-1ce1-488e-aa25-0992dafcc139">
+</div>
+
 # FinGPT: Open-Source Financial Large Language Models
 [![Downloads](https://static.pepy.tech/badge/fingpt)](https://pepy.tech/project/fingpt)
 [![Downloads](https://static.pepy.tech/badge/fingpt/week)](https://pepy.tech/project/fingpt)
 [![Python 3.8](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
 [![PyPI](https://img.shields.io/pypi/v/fingpt.svg)](https://pypi.org/project/fingpt/)
 ![License](https://img.shields.io/github/license/AI4Finance-Foundation/fingpt.svg?color=brightgreen)
-
+![](https://img.shields.io/github/issues-raw/AI4Finance-Foundation/fingpt?label=Issues)
+![](https://img.shields.io/github/issues-closed-raw/AI4Finance-Foundation/fingpt?label=Closed+Issues)
+![](https://img.shields.io/github/issues-pr-raw/AI4Finance-Foundation/fingpt?label=Open+PRs)
+![](https://img.shields.io/github/issues-pr-closed-raw/AI4Finance-Foundation/fingpt?label=Closed+PRs)
 
 <div align="center">
 <img align="center" src=figs/logo_transparent_background.png width="40%"/>
@@ -17,6 +24,9 @@ Let us not expect Wall Street to open-source LLMs or open APIs, due to FinTech i
 <https://huggingface.co/FinGPT>
 
 [![](https://dcbadge.vercel.app/api/server/trsr8SXpW5)](https://discord.gg/trsr8SXpW5)
+
+![Visitors](https://api.visitorbadge.io/api/VisitorHit?user=AI4Finance-Foundation&repo=FinGPT&countColor=%23B17A)
+
 
 ## What's New:
  - [Model Release] Nov, 2023: We release [FinGPT-Forecaster](https://github.com/AI4Finance-Foundation/FinGPT/tree/master/fingpt/FinGPT_Forecaster)!  🔥[Demo](https://huggingface.co/spaces/FinGPT/FinGPT-Forecaster), [Medium Blog](https://medium.datadriveninvestor.com/introducing-fingpt-forecaster-the-future-of-robo-advisory-services-50add34e3d3c) & [Model](https://huggingface.co/FinGPT/fingpt-forecaster_dow30_llama2-7b_lora) are available on Huggingface🤗!
@@ -41,6 +51,8 @@ Let us not expect Wall Street to open-source LLMs or open APIs, due to FinTech i
 ### Milestone of AI Robo-Advisor: FinGPT-Forecaster
 
 Try the latest released FinGPT-Forecaster demo at our [HuggingFace Space](https://huggingface.co/spaces/FinGPT/FinGPT-Forecaster)
+
+The dataset for FinGPT-Forecaster: https://huggingface.co/datasets/FinGPT/fingpt-forecaster-dow30-202305-202405
 
 ![demo_interface](fingpt/FinGPT_Forecaster/figs/interface.png)
 
@@ -85,8 +97,8 @@ For detailed and more customized implementation, please refer to [FinGPT-Forecas
   
     **Cost per GPU hour.** For **A100 GPUs**, the AWS p4d.24xlarge instance, equipped with 8 A100 GPUs is used as a benchmark to estimate the costs. Note that BloombergGPT also used p4d.24xlarge As of July 11, 2023, the hourly rate for this instance stands at $32.773. Consequently, the estimated cost per GPU hour comes to $32.77 divided by 8, resulting in approximately **$4.10**. With this value as the reference unit price (1 GPU hour). **BloombergGPT estimated cost= 512 x 53 x 24 = 651,264 GPU hours x $4.10 = $2,670,182.40**. For **RTX 3090**, we assume its cost per hour is approximately **$1.0**, which is actually much higher than available GPUs from platforms like vast.ai.
   
-  * Reproduce the results by running [benchmarks](./fingpt/FinGPT_v3/benchmark/benchmarks.ipynb), and the detailed tutorial is on the way.
-  * Finetune your own FinGPT v3 model with the LoRA method on only an RTX 3090 with this [notebook](./fingpt/FinGPT_v3/training_8bit/train_Llama2_13B.ipynb) in 8bit or this [notebook](./fingpt/FinGPT_v3/training_int4/train.ipynb) in int4 (QLoRA)
+  * Reproduce the results by running [benchmarks](./fingpt/FinGPT_Sentiment_Analysis_v3/benchmark/benchmarks.ipynb), and the detailed tutorial is on the way.
+  * Finetune your own FinGPT v3 model with the LoRA method on only an RTX 3090 with this [notebook](./fingpt/FinGPT_Sentiment_Analysis_v3/training_8bit/train_Llama2_13B.ipynb) in 8bit or this [notebook](./fingpt/FinGPT_Sentiment_Analysis_v3/training_int4/train.ipynb) in int4 (QLoRA)
   
 * [FinGPT V1](./fingpt)
   + **FinGPT by finetuning ChatGLM2 / Llama2 with LoRA with the market-labeled data for the Chinese Market**
@@ -159,7 +171,7 @@ The datasets we used, and the **multi-task financial LLM** models are available 
 * FinGPT Framework: Open-Source Financial Large Language Models
 
 <div align="center">
-<img align="center" src=figs/FinGPT_framework_20231003.png>
+<img align="center" src=figs/FinGPT_framework_20240301.png>
 </div>
 
 * [FinGPT-RAG](https://github.com/AI4Finance-Foundation/FinGPT/tree/master/fingpt/FinGPT_RAG): We present a retrieval-augmented large language model framework specifically designed for financial sentiment analysis, optimizing information depth and context through external knowledge retrieval, thereby ensuring nuanced predictions.
