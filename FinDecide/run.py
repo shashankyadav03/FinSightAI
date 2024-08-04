@@ -80,8 +80,7 @@ def handle_user_query(user_query):
         
         # Add a "Verify" button next to the bot's message
             if st.button(f"Verify Response {i//2 + 1}"):
-                with st.sidebar:
-                    st.subheader("Verification")
+                with st.spinner("Verifying response..."):
                     verify_response(message.content)
 
 def verify_response(bot_message):
@@ -90,12 +89,19 @@ def verify_response(bot_message):
     st.write(f"🤖: {bot_message}")
 
     # Add your verification logic here
-    news_heading = run_openai_api(bot_message,"Convert this prompt to news topic of 2 words")
+    # news_heading = run_openai_api(bot_message,"Convert this prompt to news topic of 2 words")
 
-    news_result = run_news_api(news_heading)
-    st.write(news_result)
+    # news_result = run_news_api(news_heading)
+    # st.write(news_result)
 
     st.success("Verification complete!")
+    st.radio("Is the response correct?", ["Yes", "No"])
+
+    # Add a button to continue the conversation
+    if st.button("Continue"):
+        # Clear all chat messages
+        st.session_state.chat_history = []
+        st.write("🤖: Great! What else would you like to know?")
 
 
 def main():
