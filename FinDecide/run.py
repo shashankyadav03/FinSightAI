@@ -2,15 +2,19 @@ import streamlit as st
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS 
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from langchain_community.chat_models import ChatOpenAI
+import os
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from get_news import run_news_api
+from open_ai import run_openai_api
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 def get_text_from_pdf(pdf_docs):
     raw_text = ""
@@ -30,107 +34,125 @@ def get_text_chunks(raw_text):
     text_chunks = text_splitter.split_text(raw_text)
     return text_chunks
 
+
 def get_vector_store(text_chunks):
     embeddings = OpenAIEmbeddings()
     vector_store = FAISS.from_texts(embedding = embeddings, texts = text_chunks)
     return vector_store
 
 def get_conversation_chain(vector_store):
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model_name="gpt-4o-mini")
     # llm =  HuggingFaceHub(repo_id="EleutherAI/gpt-neo-2.7B",model_kwargs={"max_length": 512, "temperature": 0.7})
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(llm = llm, retriever = vector_store.as_retriever(), memory = memory)
     return conversation_chain
 
-def handler_user_query(user_query):
-    response = st.session_state.conversation_chain({'question': user_query})
+def handle_user_query(user_query):
+    # Check if conversation chain is initialized
+    if st.session_state.conversation_chain is None:
+        st.write("🤖: Please upload your document to continue!")
+        return
+
+    response = st.session_state.conversation_chain.invoke({'question': user_query})
     st.session_state.chat_history = response['chat_history']
 
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
-            st.write(message.content)
+            # User message (right-aligned)
+            st.markdown(
+                f"""
+                <div style="text-align: right;">
+                    <strong>👤: {message.content}</strong>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
-            st.write(f"🤖: {message.content}")
+            # Bot message (left-aligned)
+            st.markdown(
+                f"""
+                <div style="text-align: left;">
+                    <strong>🤖: {message.content}</strong>
+                </div>
+                """,
+                unsafe_allow_html=True
+        )
+        
+        # Add a "Verify" button next to the bot's message
+            if st.button(f"Verify Response {i//2 + 1}"):
+                with st.sidebar:
+                    st.subheader("Verification")
+                    verify_response(message.content)
+
+def verify_response(bot_message):
+    # Placeholder for the verification logic
+    st.write("Verifying the following response:")
+    st.write(f"🤖: {bot_message}")
+
+    # Add your verification logic here
+    news_heading = run_openai_api(bot_message,"Convert this prompt to news topic of 2 words")
+
+    news_result = run_news_api(news_heading)
+    st.write(news_result)
+
+    st.success("Verification complete!")
+
 
 def main():
+    # Load environment variables
     load_dotenv()
-    st.set_page_config(page_title="Super Context Chatbot", page_icon="🤖")
 
+    # Set up the Streamlit page configuration
+    st.set_page_config(page_title="Financial Recommendations System", page_icon="🤖")
+
+    # Initialize session state variables
     if 'conversation_chain' not in st.session_state:
         st.session_state.conversation_chain = None
     
     if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = None
+        st.session_state.chat_history = []
 
-    st.header("Super Context Chatbot 🤖")
-    
-    user_query = st.text_input("Chat with the chatbot below:")
-    if user_query:
-        handler_user_query(user_query)
+    # Header of the app
+    st.header("Financial Recommendations AI Agent 🤖")
 
-    # Say Hello to user in simple chat ui
-    st.write("🤖: Hello! I am a Super Context Chatbot. I can help you with your queries. Please upload your documents to get started.")
+    # Placeholder for initial greeting
+    chat_placeholder = st.empty()
     
+    # Show greeting message if the conversation chain has not been initialized
+    if not st.session_state.conversation_chain:
+        chat_placeholder.write("🤖: Please upload your document to continue!")
+    
+    # Sidebar for document upload and processing
     with st.sidebar:
         st.subheader("Your documents")
-        pdf_docs = st.file_uploader("Upload your documents here",accept_multiple_files=True)
+        pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
         
         if st.button("Process"):
-            with st.spinner("Processing..."):
-                # get text from pdf
-                raw_text = get_text_from_pdf(pdf_docs)
-                
-                # get text chunks
-                text_chunks = get_text_chunks(raw_text)
+            if pdf_docs:
+                with st.spinner("Processing..."):
+                    # Get text from PDF
+                    raw_text = get_text_from_pdf(pdf_docs)
+                    
+                    # Get text chunks
+                    text_chunks = get_text_chunks(raw_text)
 
-                # create vector embeddings
-                vector_store = get_vector_store(text_chunks)
-                st.success("Processing complete!")
+                    # Create vector embeddings
+                    vector_store = get_vector_store(text_chunks)
+                    st.success("Processing complete!")
 
-                # conversation chain
-                st.session_state.conversation_chain = get_conversation_chain(vector_store)
+                    # Create conversation chain
+                    st.session_state.conversation_chain = get_conversation_chain(vector_store)
+
+                    # Clear the initial greeting and prompt user to start conversation
+                    chat_placeholder.empty()
+                    st.write("🤖: Processing is complete! You can now start asking your questions.")
+            else:
+                st.warning("Please upload at least one document before processing.")
+
+    # Chat input and handling
+    user_query = st.text_input("Chat with the chatbot below:")
+    if user_query:
+        handle_user_query(user_query)
 
 if __name__ == '__main__':
     main()
-
-# # Load the tokenizer and model
-# model_name = "path_to_finetuned_llama_model"
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
-# model = AutoModelForCausalLM.from_pretrained(model_name)
-
-# # Function to generate response from the model
-# def generate_response(financial_data, decision_context):
-#     prompt = f"""
-#     Financial Data:
-#     {financial_data}
-
-#     Decision Context:
-#     {decision_context}
-
-#     Question: Based on the above financial data, should the company proceed with the decision to invest in R&D? Provide a detailed analysis and recommendation.
-#     """
-#     inputs = tokenizer(prompt, return_tensors="pt")
-#     outputs = model.generate(inputs["input_ids"], max_length=512, num_return_sequences=1)
-#     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-#     return response
-
-# # Streamlit interface
-# st.title("Financial Decision-Making Chatbot")
-
-# st.header("Upload Financial Data")
-# uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-
-# if uploaded_file:
-#     financial_data_df = pd.read_csv(uploaded_file)
-#     st.write(financial_data_df)
-
-#     st.header("Decision Context")
-#     decision_context = st.text_area("Describe the decision context (e.g., investment details)")
-
-#     if st.button("Analyze Decision"):
-#         # Convert the financial data DataFrame to a string
-#         financial_data_str = financial_data_df.to_string(index=False)
-#         # Generate and display the response
-#         # response = generate_response(financial_data_str, decision_context)
-#         st.subheader("Recommendation")
-#         st.write("response")
