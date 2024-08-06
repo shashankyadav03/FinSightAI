@@ -13,3 +13,4 @@ tiktoken
 huggingface_hub
 pyth
 langchain_openai
+lora

@@ -1,20 +1,23 @@
 import streamlit as st
-import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
+from transformers import LLaMATokenizer, LLaMAForCausalLM
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.vectorstores import FAISS 
-from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-import os
+from langchain.memory import ConversationBufferMemory
+from langchain.llms import HuggingFaceHub
+import torch
+from transformers import LlamaForCausalLM, LlamaTokenizer
 from langchain_openai import ChatOpenAI
-from langchain_openai import OpenAIEmbeddings
-from get_news import run_news_api
-from open_ai import run_openai_api
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+# Load the fine-tuned model and tokenizer
+def initialize_llama_model():
+    model_path = "./finetuned-llama-7b"
+    model = LlamaForCausalLM.from_pretrained(model_path)
+    tokenizer = LlamaTokenizer.from_pretrained(model_path)
+    return model, tokenizer
 
 def get_text_from_pdf(pdf_docs):
     raw_text = ""
@@ -34,17 +37,21 @@ def get_text_chunks(raw_text):
     text_chunks = text_splitter.split_text(raw_text)
     return text_chunks
 
-
 def get_vector_store(text_chunks):
     embeddings = OpenAIEmbeddings()
-    vector_store = FAISS.from_texts(embedding = embeddings, texts = text_chunks)
+    vector_store = FAISS.from_texts(embedding=embeddings, texts=text_chunks)
     return vector_store
 
 def get_conversation_chain(vector_store):
-    llm = ChatOpenAI(model_name="gpt-4o-mini")
-    # llm =  HuggingFaceHub(repo_id="EleutherAI/gpt-neo-2.7B",model_kwargs={"max_length": 512, "temperature": 0.7})
+    # Initialize the LLaMA model
+    model, tokenizer = initialize_llama_model()
+
+    # Optionally, you can use GPT-4 or other models
+    llm = ChatOpenAI(model_name="gpt-4")
+    # llm = HuggingFaceHub(repo_id="facebook/llama-7b", model_kwargs={"max_length": 512, "temperature": 0.7})
+
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(llm = llm, retriever = vector_store.as_retriever(), memory = memory)
+    conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=vector_store.as_retriever(), memory=memory)
     return conversation_chain
 
 def handle_user_query(user_query):
@@ -77,22 +84,19 @@ def handle_user_query(user_query):
                 """,
                 unsafe_allow_html=True
         )
-        
+
         # Add a "Verify" button next to the bot's message
-            if st.button(f"Verify Response {i//2 + 1}"):
-                with st.spinner("Verifying response..."):
-                    verify_response(message.content)
+        if st.button(f"Verify Response {i//2 + 1}"):
+            with st.spinner("Verifying response..."):
+                verify_response(message.content)
 
 def verify_response(bot_message):
-    # Placeholder for the verification logic
     st.write("Verifying the following response:")
     st.write(f"🤖: {bot_message}")
 
-    # Add your verification logic here
-    # news_heading = run_openai_api(bot_message,"Convert this prompt to news topic of 2 words")
-
-    # news_result = run_news_api(news_heading)
-    # st.write(news_result)
+    # Verification logic (real-time data check)
+    # Placeholder: Implement your actual verification logic here
+    # Example: Compare the bot's message with real-time financial data fetched from an API
 
     st.success("Verification complete!")
     st.radio("Is the response correct?", ["Yes", "No"])
@@ -102,7 +106,6 @@ def verify_response(bot_message):
         # Clear all chat messages
         st.session_state.chat_history = []
         st.write("🤖: Great! What else would you like to know?")
-
 
 def main():
     # Load environment variables
