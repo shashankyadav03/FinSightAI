@@ -1,23 +1,29 @@
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
-from transformers import LLaMATokenizer, LLaMAForCausalLM
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains import ConversationalRetrievalChain
+from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain.llms import HuggingFaceHub
 import torch
-from transformers import LlamaForCausalLM, LlamaTokenizer
+# from transformers import LlamaForCausalLM, LlamaTokenizer
 from langchain_openai import ChatOpenAI
+import os
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.prompts import PromptTemplate
+
+# Fix for OpenMP initialization error
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+
 
 # Load the fine-tuned model and tokenizer
-def initialize_llama_model():
-    model_path = "./finetuned-llama-7b"
-    model = LlamaForCausalLM.from_pretrained(model_path)
-    tokenizer = LlamaTokenizer.from_pretrained(model_path)
-    return model, tokenizer
+# def initialize_llama_model():
+#     model_path = "./finetuned-llama-7b"
+#     model = LlamaForCausalLM.from_pretrained(model_path)
+#     tokenizer = LlamaTokenizer.from_pretrained(model_path)
+#     return model, tokenizer
 
 def get_text_from_pdf(pdf_docs):
     raw_text = ""
@@ -38,58 +44,111 @@ def get_text_chunks(raw_text):
     return text_chunks
 
 def get_vector_store(text_chunks):
+    # Create a cache directory for the same text chunks
+    if not os.path.exists('utilities/vectorstores'):
+        os.makedirs('utilities/vectorstores')
+
+    # Check if the vector store already exists
+    vector_store_path = 'utilities/vectorstores/db_faiss'
+    if os.path.exists(vector_store_path):
+        return FAISS.load_local(vector_store_path)
+    
+
+    # Initialize the OpenAI embeddings
     embeddings = OpenAIEmbeddings()
     vector_store = FAISS.from_texts(embedding=embeddings, texts=text_chunks)
+    vector_store.save_local(vector_store_path)
     return vector_store
 
+custom_prompt_template = """
+You're tasked with providing a helpful response based on the given context and question.
+Accuracy is paramount, so if you're uncertain, it's best to acknowledge that rather than providing potentially incorrect information.
+
+Context: {context}
+Question: {question}
+
+
+Please craft a clear and informative response that directly addresses the question.
+Aim for accuracy and relevance, keeping the user's needs in mind.
+Response:
+"""
+
+def set_custom_prompt():
+    prompt = PromptTemplate(template=custom_prompt_template,
+                            input_variables=['context', 'question'])
+    return prompt
+
+def retrieval_qa_chain(llm, prompt, db):
+    combine_docs_chain = create_stuff_documents_chain(
+        llm=llm,
+        prompt=prompt
+    )
+    qa_chain = create_retrieval_chain(
+                                           retriever=db.as_retriever(search_kwargs={'k': 2}),
+                                           combine_docs_chain = combine_docs_chain
+                                           )
+    return qa_chain
+
 def get_conversation_chain(vector_store):
-    # Initialize the LLaMA model
-    model, tokenizer = initialize_llama_model()
-
-    # Optionally, you can use GPT-4 or other models
-    llm = ChatOpenAI(model_name="gpt-4")
-    # llm = HuggingFaceHub(repo_id="facebook/llama-7b", model_kwargs={"max_length": 512, "temperature": 0.7})
-
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=vector_store.as_retriever(), memory=memory)
-    return conversation_chain
+    # Initialize the LLM (e.g., GPT-4)
+    db = vector_store
+    llm = ChatOpenAI(model_name="gpt-4o-mini")
+    qa_prompt = set_custom_prompt()
+    qa = retrieval_qa_chain(llm, qa_prompt, db)
+    return qa
 
 def handle_user_query(user_query):
-    if st.session_state.conversation_chain is None:
+    if 'conversation_chain' not in st.session_state or st.session_state.conversation_chain is None:
         st.write("🤖: Please upload your document to continue!")
         return
-
-    chat_history = st.session_state.chat_history
-
-    if not chat_history:
-        # Initial question by the user
-        if "diversify" in user_query.lower():
-            st.session_state.chat_history.append({"role": "user", "content": user_query})
-            system_message = "Absolutely! To start, could you tell me more about your risk tolerance and investment horizon? For example, are you comfortable with higher risks for potentially higher returns, or would you prefer a more conservative approach?"
-            st.session_state.chat_history.append({"role": "system", "content": system_message})
-    else:
-        last_message = chat_history[-1]["content"]
-        if "risk tolerance" in last_message:
-            st.session_state.chat_history.append({"role": "user", "content": user_query})
-            system_message = "Great! Based on your moderate risk tolerance and a 10-year investment horizon, a balanced asset allocation strategy could be a good fit. Typically, this might involve:\n- 40% in bonds to provide stability and income.\n- 40% in equities, including both blue-chip stocks for steady growth and some growth stocks for higher returns.\n- 20% in alternative investments like real estate or commodities to diversify risk.\n\nWould you like to see a more detailed breakdown, or should I go ahead and verify this strategy against recent market conditions?"
-            st.session_state.chat_history.append({"role": "system", "content": system_message})
-        elif "verify this strategy" in last_message:
-            st.session_state.chat_history.append({"role": "user", "content": user_query})
-            with st.spinner("Verifying the strategy..."):
-                verify_response()
-        elif "revised allocation" in last_message:
-            st.session_state.chat_history.append({"role": "user", "content": user_query})
-            system_message = "Sure! Here’s the summary of your tailored asset allocation strategy:\n- 35% Bonds: Primarily in government and corporate bonds to maintain stability.\n- 45% Equities: Split between blue-chip stocks in tech and healthcare sectors for growth, with a small allocation to growth stocks for potential higher returns.\n- 20% Alternative Investments: Including real estate and commodities like gold to diversify and protect against market volatility.\n\nThis strategy is designed to balance growth with moderate risk, taking into account the latest market conditions."
-            st.session_state.chat_history.append({"role": "system", "content": system_message})
-
-    display_chat_history()
-
-def verify_response():
-    # Simulate verification logic
-    bot_message = "Here’s what I found:\n- Bond Market: Recent news indicates that rising interest rates might affect bond yields negatively. You might want to consider reducing the bond allocation slightly to 35% and shifting the extra 5% to equities or other stable income-generating investments.\n- Equity Market: There’s positive sentiment around blue-chip stocks, particularly in the tech and healthcare sectors. Growth stocks, however, are facing some volatility due to economic uncertainties.\n- Alternative Investments: Commodities like gold are seeing increased demand, which could be a safe bet as part of your alternative investment allocation.\n\nBased on this, I’d recommend a revised allocation:\n- 35% in bonds\n- 45% in equities, with a focus on blue-chip tech and healthcare stocks\n- 20% in alternative investments, including some exposure to commodities like gold."
+    print(user_query)
+    print(type(user_query))
+    # KeyError: "Input to PromptTemplate is missing variables {'question'}.  Expected: ['context', 'question'] Received: ['input', 'context']"
+    input = {
+        'context': "",
+        'question': user_query
+    }
     
-    st.session_state.chat_history.append({"role": "system", "content": bot_message})
+    # Pass 'question' instead of 'input' to match the expected variable name
+    response = st.session_state.conversation_chain.invoke({'input': input})
+    print(response)
+    system_message = response['result']
+    print(system_message)
+
+    # Update the chat history
+    st.session_state.chat_history.append({"role": "system", "content": system_message})
+
+    # Display the updated conversation
     display_chat_history()
+
+    # Add the option for verification
+    st.button("Verify the Response", on_click=verify_response, args=(system_message,))
+
+
+def verify_response(bot_message):
+    if st.session_state.conversation_chain is None:
+        st.write("🤖: The conversation chain is not initialized!")
+        return
+    
+    # Prepare input for LLM and RAG
+    verification_input = {
+        'question': f"Verify the following strategy: {bot_message}",
+        'chat_history': st.session_state.chat_history  # Pass the chat history for context
+    }
+
+    # Invoke the conversation chain to perform the verification
+    response = st.session_state.conversation_chain.invoke(verification_input)
+    
+    # Extract the LLM's response and update chat history
+    verification_message = response['answer']  # Assuming 'answer' key holds the LLM's response
+    st.session_state.chat_history.append({"role": "system", "content": verification_message})
+
+    # Display the updated conversation with the verification result
+    display_chat_history()
+
+    # Optionally, you could also ask for user feedback here
+    st.radio("Is the verification result helpful?", ["Yes", "No"])
+
 
 def display_chat_history():
     for i, message in enumerate(st.session_state.chat_history):
