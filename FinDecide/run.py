@@ -55,83 +55,81 @@ def get_conversation_chain(vector_store):
     return conversation_chain
 
 def handle_user_query(user_query):
-    # Check if conversation chain is initialized
     if st.session_state.conversation_chain is None:
         st.write("🤖: Please upload your document to continue!")
         return
 
-    response = st.session_state.conversation_chain.invoke({'question': user_query})
-    st.session_state.chat_history = response['chat_history']
+    chat_history = st.session_state.chat_history
 
+    if not chat_history:
+        # Initial question by the user
+        if "diversify" in user_query.lower():
+            st.session_state.chat_history.append({"role": "user", "content": user_query})
+            system_message = "Absolutely! To start, could you tell me more about your risk tolerance and investment horizon? For example, are you comfortable with higher risks for potentially higher returns, or would you prefer a more conservative approach?"
+            st.session_state.chat_history.append({"role": "system", "content": system_message})
+    else:
+        last_message = chat_history[-1]["content"]
+        if "risk tolerance" in last_message:
+            st.session_state.chat_history.append({"role": "user", "content": user_query})
+            system_message = "Great! Based on your moderate risk tolerance and a 10-year investment horizon, a balanced asset allocation strategy could be a good fit. Typically, this might involve:\n- 40% in bonds to provide stability and income.\n- 40% in equities, including both blue-chip stocks for steady growth and some growth stocks for higher returns.\n- 20% in alternative investments like real estate or commodities to diversify risk.\n\nWould you like to see a more detailed breakdown, or should I go ahead and verify this strategy against recent market conditions?"
+            st.session_state.chat_history.append({"role": "system", "content": system_message})
+        elif "verify this strategy" in last_message:
+            st.session_state.chat_history.append({"role": "user", "content": user_query})
+            with st.spinner("Verifying the strategy..."):
+                verify_response()
+        elif "revised allocation" in last_message:
+            st.session_state.chat_history.append({"role": "user", "content": user_query})
+            system_message = "Sure! Here’s the summary of your tailored asset allocation strategy:\n- 35% Bonds: Primarily in government and corporate bonds to maintain stability.\n- 45% Equities: Split between blue-chip stocks in tech and healthcare sectors for growth, with a small allocation to growth stocks for potential higher returns.\n- 20% Alternative Investments: Including real estate and commodities like gold to diversify and protect against market volatility.\n\nThis strategy is designed to balance growth with moderate risk, taking into account the latest market conditions."
+            st.session_state.chat_history.append({"role": "system", "content": system_message})
+
+    display_chat_history()
+
+def verify_response():
+    # Simulate verification logic
+    bot_message = "Here’s what I found:\n- Bond Market: Recent news indicates that rising interest rates might affect bond yields negatively. You might want to consider reducing the bond allocation slightly to 35% and shifting the extra 5% to equities or other stable income-generating investments.\n- Equity Market: There’s positive sentiment around blue-chip stocks, particularly in the tech and healthcare sectors. Growth stocks, however, are facing some volatility due to economic uncertainties.\n- Alternative Investments: Commodities like gold are seeing increased demand, which could be a safe bet as part of your alternative investment allocation.\n\nBased on this, I’d recommend a revised allocation:\n- 35% in bonds\n- 45% in equities, with a focus on blue-chip tech and healthcare stocks\n- 20% in alternative investments, including some exposure to commodities like gold."
+    
+    st.session_state.chat_history.append({"role": "system", "content": bot_message})
+    display_chat_history()
+
+def display_chat_history():
     for i, message in enumerate(st.session_state.chat_history):
-        if i % 2 == 0:
-            # User message (right-aligned)
+        if message['role'] == 'user':
             st.markdown(
                 f"""
                 <div style="text-align: right;">
-                    <strong>👤: {message.content}</strong>
+                    <strong>👤: {message['content']}</strong>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
         else:
-            # Bot message (left-aligned)
             st.markdown(
                 f"""
                 <div style="text-align: left;">
-                    <strong>🤖: {message.content}</strong>
+                    <strong>🤖: {message['content']}</strong>
                 </div>
                 """,
                 unsafe_allow_html=True
-        )
-
-        # Add a "Verify" button next to the bot's message
-        if st.button(f"Verify Response {i//2 + 1}"):
-            with st.spinner("Verifying response..."):
-                verify_response(message.content)
-
-def verify_response(bot_message):
-    st.write("Verifying the following response:")
-    st.write(f"🤖: {bot_message}")
-
-    # Verification logic (real-time data check)
-    # Placeholder: Implement your actual verification logic here
-    # Example: Compare the bot's message with real-time financial data fetched from an API
-
-    st.success("Verification complete!")
-    st.radio("Is the response correct?", ["Yes", "No"])
-
-    # Add a button to continue the conversation
-    if st.button("Continue"):
-        # Clear all chat messages
-        st.session_state.chat_history = []
-        st.write("🤖: Great! What else would you like to know?")
+            )
 
 def main():
-    # Load environment variables
     load_dotenv()
 
-    # Set up the Streamlit page configuration
     st.set_page_config(page_title="Financial Recommendations System", page_icon="🤖")
 
-    # Initialize session state variables
     if 'conversation_chain' not in st.session_state:
         st.session_state.conversation_chain = None
     
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    # Header of the app
     st.header("Financial Recommendations AI Agent 🤖")
 
-    # Placeholder for initial greeting
     chat_placeholder = st.empty()
     
-    # Show greeting message if the conversation chain has not been initialized
     if not st.session_state.conversation_chain:
         chat_placeholder.write("🤖: Please upload your document to continue!")
     
-    # Sidebar for document upload and processing
     with st.sidebar:
         st.subheader("Your documents")
         pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
@@ -139,26 +137,16 @@ def main():
         if st.button("Process"):
             if pdf_docs:
                 with st.spinner("Processing..."):
-                    # Get text from PDF
                     raw_text = get_text_from_pdf(pdf_docs)
-                    
-                    # Get text chunks
                     text_chunks = get_text_chunks(raw_text)
-
-                    # Create vector embeddings
                     vector_store = get_vector_store(text_chunks)
                     st.success("Processing complete!")
-
-                    # Create conversation chain
                     st.session_state.conversation_chain = get_conversation_chain(vector_store)
-
-                    # Clear the initial greeting and prompt user to start conversation
                     chat_placeholder.empty()
                     st.write("🤖: Processing is complete! You can now start asking your questions.")
             else:
                 st.warning("Please upload at least one document before processing.")
 
-    # Chat input and handling
     user_query = st.text_input("Chat with the chatbot below:")
     if user_query:
         handle_user_query(user_query)
