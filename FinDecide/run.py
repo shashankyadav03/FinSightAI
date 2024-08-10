@@ -1,7 +1,7 @@
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
@@ -10,9 +10,9 @@ import torch
 # from transformers import LlamaForCausalLM, LlamaTokenizer
 from langchain_openai import ChatOpenAI
 import os
-from langchain.chains.retrieval import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.prompts import PromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
+from get_news import run_news_api
+from llm_response import run_openai_api
 
 # Fix for OpenMP initialization error
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -43,114 +43,133 @@ def get_text_chunks(raw_text):
     text_chunks = text_splitter.split_text(raw_text)
     return text_chunks
 
+
 def get_vector_store(text_chunks):
-    # Create a cache directory for the same text chunks
-    if not os.path.exists('utilities/vectorstores'):
-        os.makedirs('utilities/vectorstores')
+    try:
+        # embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2",
+        #                                model_kwargs={'device': 'auto'})
+        embeddings = OpenAIEmbeddings()
+        vector_store = FAISS.from_texts(embedding=embeddings, texts=text_chunks)
+        return vector_store
+    except Exception as e:
+        st.error(f"An error occurred while creating the vector store: {e}")
+        return None
 
-    # Check if the vector store already exists
-    vector_store_path = 'utilities/vectorstores/db_faiss'
-    if os.path.exists(vector_store_path):
-        return FAISS.load_local(vector_store_path)
-    
-
-    # Initialize the OpenAI embeddings
-    embeddings = OpenAIEmbeddings()
-    vector_store = FAISS.from_texts(embedding=embeddings, texts=text_chunks)
-    vector_store.save_local(vector_store_path)
-    return vector_store
-
-custom_prompt_template = """
-You're tasked with providing a helpful response based on the given context and question.
-Accuracy is paramount, so if you're uncertain, it's best to acknowledge that rather than providing potentially incorrect information.
-
-Context: {context}
-Question: {question}
-
-
-Please craft a clear and informative response that directly addresses the question.
-Aim for accuracy and relevance, keeping the user's needs in mind.
-Response:
-"""
-
-def set_custom_prompt():
-    prompt = PromptTemplate(template=custom_prompt_template,
-                            input_variables=['context', 'question'])
-    return prompt
-
-def retrieval_qa_chain(llm, prompt, db):
-    combine_docs_chain = create_stuff_documents_chain(
-        llm=llm,
-        prompt=prompt
-    )
-    qa_chain = create_retrieval_chain(
-                                           retriever=db.as_retriever(search_kwargs={'k': 2}),
-                                           combine_docs_chain = combine_docs_chain
-                                           )
-    return qa_chain
 
 def get_conversation_chain(vector_store):
-    # Initialize the LLM (e.g., GPT-4)
-    db = vector_store
-    llm = ChatOpenAI(model_name="gpt-4o-mini")
-    qa_prompt = set_custom_prompt()
-    qa = retrieval_qa_chain(llm, qa_prompt, db)
-    return qa
+    llm = ChatOpenAI(model='gpt-4o-mini',max_tokens=200)
+    # llm =  HuggingFaceHub(repo_id="EleutherAI/gpt-neo-2.7B",model_kwargs={"max_length": 512, "temperature": 0.7})
+    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+    conversation_chain = ConversationalRetrievalChain.from_llm(llm = llm, retriever = vector_store.as_retriever(), memory = memory)
+    return conversation_chain
 
 def handle_user_query(user_query):
+    """
+    Handles the user's query, sends it to the conversation chain, and updates the chat history.
+    
+    Args:
+        user_query (str): The user's query.
+    """
     if 'conversation_chain' not in st.session_state or st.session_state.conversation_chain is None:
         st.write("🤖: Please upload your document to continue!")
         return
-    print(user_query)
-    print(type(user_query))
-    # KeyError: "Input to PromptTemplate is missing variables {'question'}.  Expected: ['context', 'question'] Received: ['input', 'context']"
-    input = {
-        'context': "",
-        'question': user_query
-    }
     
-    # Pass 'question' instead of 'input' to match the expected variable name
-    response = st.session_state.conversation_chain.invoke({'input': input})
-    print(response)
-    system_message = response['result']
-    print(system_message)
+    try:
+        # Send the user query to the conversation chain and get the response
+        response = st.session_state.conversation_chain.invoke({'question': user_query})
+        st.session_state.chat_history.append({"role": "user", "content": user_query})
+        
+        # Extract the LLM's response and update chat history
+        system_message = response.get('answer', "I'm sorry, I didn't understand that.")  # Safely extract 'answer'
+        st.session_state.chat_history.append({"role": "system", "content": system_message})
 
-    # Update the chat history
-    st.session_state.chat_history.append({"role": "system", "content": system_message})
+        # Display the updated chat history
+        display_chat_history()
 
-    # Display the updated conversation
-    display_chat_history()
+        # Add the option for verification
+        st.button("Verify the Response", on_click=verify_response, args=(system_message,))
+    
+    except Exception as e:
+        st.error(f"An error occurred while processing your query: {e}")
 
-    # Add the option for verification
-    st.button("Verify the Response", on_click=verify_response, args=(system_message,))
+def get_verified_data(bot_message):
+    """
+    Get the verified data from the trusted sources.
+    
+    Returns:
+        output : str, list
+    """
+    try:
+        # Get asset word from llm_response.py
+        asset_sector = run_openai_api(bot_message,"Find one investment sector from the given details. Just give the sector name.")
+        print(f"Asset Sector: {asset_sector}")
+        # Get news data from get_news.py
+        news_df = run_news_api(asset_sector)
+        print(f"News Data: {news_df}")
+        # Update the bot_message with news data as context using llm_response.py
+        prompt_content = f"Current investment strategy: {bot_message}, News: {news_df['title'].tolist()}"
+        print(f"Prompt Content: {prompt_content}")
+        output = run_openai_api(prompt_content,"Update the investment strategy based on the news articles.")
+        print(f"Output: {output}")
+        return output, news_df, asset_sector
+    except Exception as e:
+        st.error(f"An error occurred while verifying the response: {e}")
 
 
 def verify_response(bot_message):
-    if st.session_state.conversation_chain is None:
-        st.write("🤖: The conversation chain is not initialized!")
-        return
+    """
+    Verifies the response provided by the LLM and displays the unique sources and news titles.
     
-    # Prepare input for LLM and RAG
-    verification_input = {
-        'question': f"Verify the following strategy: {bot_message}",
-        'chat_history': st.session_state.chat_history  # Pass the chat history for context
-    }
+    Args:
+        bot_message (str): The message from the bot to verify.
+    """
+    try:
+        with st.sidebar:
+            st.subheader("Verification")
 
-    # Invoke the conversation chain to perform the verification
-    response = st.session_state.conversation_chain.invoke(verification_input)
-    
-    # Extract the LLM's response and update chat history
-    verification_message = response['answer']  # Assuming 'answer' key holds the LLM's response
-    st.session_state.chat_history.append({"role": "system", "content": verification_message})
+            # Assuming get_verified_data returns a tuple (output, news_df)
+            output, news_df, asset_sector = get_verified_data(bot_message)
 
-    # Display the updated conversation with the verification result
-    display_chat_history()
+            # Extract unique source names
+            source_dicts = news_df['source'].tolist()
+            unique_sources = sorted({source['name'] for source in source_dicts})
 
-    # Optionally, you could also ask for user feedback here
-    st.radio("Is the verification result helpful?", ["Yes", "No"])
+            # Extract titles
+            titles = news_df['title'].tolist()
+
+            # Clear chat history
+            st.session_state.chat_history = []
+            st.empty()  # Clear the main area
+            st.session_state.chat_history.append({"role": "user", "content": "Please verify the strategy."})
+
+            st.session_state.chat_history.append({"role": "system", "content": "**Current investment strategy:** " + f"- {bot_message}"})
+            #Display the asset sector
+            st.write("🤖: **Asset Sector:**")
+            st.write(f"- {asset_sector}")
+
+
+            # Display the unique sources
+            
+            st.write("🤖: **Sources for the news articles:**")
+            for source in unique_sources:
+                st.write(f"- {source}")
+
+            # Display the news titles
+            st.write("🤖: **News for this sector:**")
+            for title in titles:
+                st.write(f"- {title}")
+
+            # Save the output in chat history
+            st.session_state.chat_history.append({"role": "system", "content": "**Updated investment strategy:** " + f"- {output}"})
+
+    except Exception as e:
+        st.error(f"An error occurred during verification: {e}")
 
 
 def display_chat_history():
+    """
+    Displays the chat history in the Streamlit app.
+    """
     for i, message in enumerate(st.session_state.chat_history):
         if message['role'] == 'user':
             st.markdown(
@@ -158,6 +177,7 @@ def display_chat_history():
                 <div style="text-align: right;">
                     <strong>👤: {message['content']}</strong>
                 </div>
+                <br>
                 """,
                 unsafe_allow_html=True
             )
@@ -167,9 +187,11 @@ def display_chat_history():
                 <div style="text-align: left;">
                     <strong>🤖: {message['content']}</strong>
                 </div>
+                <br>
                 """,
                 unsafe_allow_html=True
             )
+
 
 def main():
     load_dotenv()
@@ -183,6 +205,7 @@ def main():
         st.session_state.chat_history = []
 
     st.header("Financial Recommendations AI Agent 🤖")
+    st.subheader("Asset Allocation and Investment Strategy")
 
     chat_placeholder = st.empty()
     
@@ -191,8 +214,11 @@ def main():
     
     with st.sidebar:
         st.subheader("Your documents")
-        pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
-        
+        # pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
+        pdf_file_location = "data/FinSightAI_Report.pdf"
+        pdf_docs = [pdf_file_location]
+        st.write(pdf_docs)
+
         if st.button("Process"):
             if pdf_docs:
                 with st.spinner("Processing..."):
@@ -205,10 +231,15 @@ def main():
                     st.write("🤖: Processing is complete! You can now start asking your questions.")
             else:
                 st.warning("Please upload at least one document before processing.")
-
     user_query = st.text_input("Chat with the chatbot below:")
     if user_query:
-        handle_user_query(user_query)
+        print("User Query: ", user_query)
+        print("Chat History: ", st.session_state.chat_history)
+        if st.session_state.chat_history and st.session_state.chat_history[0]['content'] == "Please verify the strategy.":
+            print("Verified response")
+            display_chat_history()
+        else:
+            handle_user_query(user_query)
 
 if __name__ == '__main__':
     main()

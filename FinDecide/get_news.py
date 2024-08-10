@@ -31,7 +31,7 @@ def fetch_news(query, use_cache=True):
             return cached_data
 
     # Fetch from NewsAPI if no cache or cache is invalid
-    url = f'https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&apiKey={api_key}'
+    url = f'https://newsapi.org/v2/everything?q={query}&language=en&sortBy=relevancy&pageSize=5&apiKey={api_key}&sources=sources=bbc-news,bloomberg,financial-times,fortune,reuters,the-wall-street-journal,google-news'
     try:
         response = requests.get(url)
         data = response.json()

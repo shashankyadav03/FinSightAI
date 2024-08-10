@@ -24,3 +24,6 @@ data/
 notebooks/.ipynb_checkpoints/
 notebooks/test/*
 notebooks/MNIST/
+
+FinDecide/utilities/cache/*
+FinDecide/utilities/cache_news/*

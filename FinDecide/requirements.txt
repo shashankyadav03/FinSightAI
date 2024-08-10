@@ -14,3 +14,5 @@ huggingface_hub
 pyth
 langchain_openai
 lora
+sentence-transformers
+langchain_huggingface

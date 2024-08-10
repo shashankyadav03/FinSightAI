@@ -17,7 +17,7 @@ def call_openai_api(prompt, api_key):
 
     data = {
         'messages': prompt,
-        'max_tokens': 100,
+        'max_tokens': 200,
         'model': 'gpt-4o-mini',
         'temperature': 0
     }
