@@ -25,6 +25,18 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 #     tokenizer = LlamaTokenizer.from_pretrained(model_path)
 #     return model, tokenizer
 
+base_prompt = """
+You are a financial advisor chatbot. Your task is to help users with investment strategies. Depending on the user's inputs, you should suggest relevant activities or strategies that align with their financial goals and risk tolerance. Your responses should be varied and adapted to the specific needs of the user.
+
+You should:
+- Ask relevant questions to understand the user's financial situation.
+- Suggest different investment activities, such as portfolio diversification, market analysis, asset reallocation, or risk management strategies.
+- Provide detailed advice based on the user’s preferences, recent market trends, and best practices in investment.
+
+Keep the conversation interactive and focused on helping the user make informed investment decisions.
+"""
+
+
 def get_text_from_pdf(pdf_docs):
     raw_text = ""
     for pdf_doc in pdf_docs:
@@ -81,6 +93,10 @@ def handle_user_query(user_query):
         
         # Extract the LLM's response and update chat history
         system_message = response.get('answer', "I'm sorry, I didn't understand that.")  # Safely extract 'answer'
+
+        if system_message == "I don't know.":
+            system_message=run_openai_api(user_query,base_prompt)
+        
         st.session_state.chat_history.append({"role": "system", "content": system_message})
 
         # Display the updated chat history
@@ -142,7 +158,7 @@ def verify_response(bot_message):
             st.empty()  # Clear the main area
             st.session_state.chat_history.append({"role": "user", "content": "Please verify the strategy."})
 
-            st.session_state.chat_history.append({"role": "system", "content": "**Current investment strategy:** " + f"- {bot_message}"})
+            st.session_state.chat_history.append({"role": "system", "content": "Current investment strategy: " + f"- {bot_message}"})
             #Display the asset sector
             st.write("🤖: **Asset Sector:**")
             st.write(f"- {asset_sector}")
@@ -160,7 +176,7 @@ def verify_response(bot_message):
                 st.write(f"- {title}")
 
             # Save the output in chat history
-            st.session_state.chat_history.append({"role": "system", "content": "**Updated investment strategy:** " + f"- {output}"})
+            st.session_state.chat_history.append({"role": "system", "content": "Updated investment strategy: " + f"- {output}"})
 
     except Exception as e:
         st.error(f"An error occurred during verification: {e}")
