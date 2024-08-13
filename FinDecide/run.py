@@ -13,6 +13,7 @@ import os
 from langchain_huggingface import HuggingFaceEmbeddings
 from get_news import run_news_api
 from llm_response import run_openai_api
+import logging
 
 # Fix for OpenMP initialization error
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -26,18 +27,26 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 #     return model, tokenizer
 
 base_prompt = """
-You are a financial advisor chatbot. Your task is to help users with investment strategies. Depending on the user's inputs, you should suggest relevant activities or strategies that align with their financial goals and risk tolerance. Your responses should be varied and adapted to the specific needs of the user.
+You are a financial advisor chatbot. Your task is to help users with investment strategies. Depending on the user's inputs, you should suggest relevant strategies that align with their financial goals and risk tolerance. Your responses should be varied and adapted to the specific needs of the user.
 
 You should:
-- Ask relevant questions to understand the user's financial situation.
-- Suggest different investment activities, such as portfolio diversification, market analysis, asset reallocation, or risk management strategies.
+- Ask relevant questions to understand the user's financial situation if not given yet.
 - Provide detailed advice based on the user’s preferences, recent market trends, and best practices in investment.
 
-Keep the conversation interactive and focused on helping the user make informed investment decisions.
+Keep the conversation interactive and focused on helping the user make informed investment decisions. Maximum 2 points per response.
 """
 
 
 def get_text_from_pdf(pdf_docs):
+    """
+    Extracts text from the uploaded PDF documents.
+
+    Args:
+        pdf_docs (list): The list of uploaded PDF documents.
+
+    Returns:
+        str: The raw text extracted from the PDF documents.
+    """
     raw_text = ""
     for pdf_doc in pdf_docs:
         pdf_reader = PdfReader(pdf_doc)
@@ -46,6 +55,15 @@ def get_text_from_pdf(pdf_docs):
     return raw_text
 
 def get_text_chunks(raw_text):
+    """
+    Splits the raw text into chunks suitable for processing.
+
+    Args:
+        raw_text (str): The raw text extracted from the PDF documents.
+
+    Returns:
+        list: The list of text chunks.
+    """
     text_splitter = CharacterTextSplitter(
         separator="\n",
         chunk_size=1000,
@@ -75,10 +93,26 @@ def get_conversation_chain(vector_store):
     conversation_chain = ConversationalRetrievalChain.from_llm(llm = llm, retriever = vector_store.as_retriever(), memory = memory)
     return conversation_chain
 
+def parse_chat_history(chat_history):
+    """
+    Parses the chat history into a single string suitable for use as a prompt.
+    
+    Args:
+        chat_history (list): The list of chat messages with roles and content.
+    
+    Returns:
+        str: The formatted conversation history as a string.
+    """
+    parsed_history = ""
+    for message in chat_history:
+        role = "User" if message['role'] == "user" else "System"
+        parsed_history += f"{role}: {message['content']}\n"
+    return parsed_history
+
 def handle_user_query(user_query):
     """
     Handles the user's query, sends it to the conversation chain, and updates the chat history.
-
+    
     Args:
         user_query (str): The user's query.
     """
@@ -99,13 +133,16 @@ def handle_user_query(user_query):
         logging.info(f"System Message: {system_message}")
 
         # Check if the response indicates uncertainty
-        if system_message.lower() in ["i don't know.", "i'm not sure.", "i didn't understand that."]:
-            # Use the base prompt if there's no chat history
-            if not st.session_state.chat_history:
+        if system_message.lower() in ["i don't know.", "i'm not sure.", "i didn't understand that."] or len(system_message) < 20:
+            # Parse chat history into a formatted string
+            parsed_history = parse_chat_history(st.session_state.chat_history)
+            new_system_message = f"You are a financial advisor chatbot. Your task is to help users with investment strategies. Give maximum 2 points per response."
+            new_prompt = f"Focus on current prompt: {user_query}\n The chat history is as follows just take this as context: {parsed_history}"
+            # Use the base prompt if there's no chat history, otherwise continue the conversation
+            if not parsed_history:
                 system_message = run_openai_api(user_query, base_prompt)
             else:
-                # Continue the conversation using the chat history
-                system_message = run_openai_api(user_query, st.session_state.chat_history)
+                system_message = run_openai_api(new_prompt, new_system_message)
 
         # Update chat history with the user query and system response
         st.session_state.chat_history.append({"role": "user", "content": user_query})
@@ -247,10 +284,10 @@ def main():
     
     with st.sidebar:
         st.subheader("Your documents")
-        # pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
-        pdf_file_location = "data/FinSightAI_Report.pdf"
-        pdf_docs = [pdf_file_location]
-        st.write(pdf_docs)
+        pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
+        # pdf_file_location = "data/FinSightAI_Report.pdf"
+        # pdf_docs = [pdf_file_location]
+        # st.write(pdf_docs)
 
         if st.button("Process"):
             if pdf_docs:
@@ -264,6 +301,13 @@ def main():
                     st.write("🤖: Processing is complete! You can now start asking your questions.")
             else:
                 st.warning("Please upload at least one document before processing.")
+        
+        # Button to start a new chat session
+        if st.button("Start New Chat"):
+            st.session_state.conversation_chain = None
+            st.session_state.chat_history = []
+            st.success("New chat started! Please upload a document to begin.")
+
     user_query = st.text_input("Chat with the chatbot below:")
     if user_query:
         print("User Query: ", user_query)
