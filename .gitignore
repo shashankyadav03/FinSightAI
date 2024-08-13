@@ -27,3 +27,6 @@ notebooks/MNIST/
 
 FinDecide/utilities/cache/*
 FinDecide/utilities/cache_news/*
+*.safetensors
+FinDecide/Test/Test3/finetune/*
+optimizer.pt

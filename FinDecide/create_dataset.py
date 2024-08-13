@@ -25,10 +25,10 @@ combined_dataset.save_to_disk('./combined_financial_dataset')
 # Step 6: Upload the combined dataset to Hugging Face
 
 # Define your dataset repository name on Hugging Face
-dataset_repo_name = "your-username/combined-financial-dataset"
+# dataset_repo_name = "shashankyadav03/combined-financial-dataset"
 
-# Push the combined dataset to Hugging Face Hub
-combined_dataset.push_to_hub(dataset_repo_name)
+# # Push the combined dataset to Hugging Face Hub
+# combined_dataset.push_to_hub(dataset_repo_name)
 
 print("Dataset uploaded and deployed successfully!")
 
