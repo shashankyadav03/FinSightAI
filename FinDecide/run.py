@@ -78,35 +78,52 @@ def get_conversation_chain(vector_store):
 def handle_user_query(user_query):
     """
     Handles the user's query, sends it to the conversation chain, and updates the chat history.
-    
+
     Args:
         user_query (str): The user's query.
     """
+    # Ensure necessary session state variables are initialized
     if 'conversation_chain' not in st.session_state or st.session_state.conversation_chain is None:
         st.write("🤖: Please upload your document to continue!")
         return
-    
+
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+
     try:
         # Send the user query to the conversation chain and get the response
         response = st.session_state.conversation_chain.invoke({'question': user_query})
-        st.session_state.chat_history.append({"role": "user", "content": user_query})
         
-        # Extract the LLM's response and update chat history
-        system_message = response.get('answer', "I'm sorry, I didn't understand that.")  # Safely extract 'answer'
+        # Safely extract the LLM's response, with a fallback message
+        system_message = response.get('answer', "I'm sorry, I didn't understand that.")
+        logging.info(f"System Message: {system_message}")
 
-        if system_message == "I don't know.":
-            system_message=run_openai_api(user_query,base_prompt)
-        
+        # Check if the response indicates uncertainty
+        if system_message.lower() in ["i don't know.", "i'm not sure.", "i didn't understand that."]:
+            # Use the base prompt if there's no chat history
+            if not st.session_state.chat_history:
+                system_message = run_openai_api(user_query, base_prompt)
+            else:
+                # Continue the conversation using the chat history
+                system_message = run_openai_api(user_query, st.session_state.chat_history)
+
+        # Update chat history with the user query and system response
+        st.session_state.chat_history.append({"role": "user", "content": user_query})
         st.session_state.chat_history.append({"role": "system", "content": system_message})
 
         # Display the updated chat history
         display_chat_history()
 
-        # Add the option for verification
+        # Add an option for verification
         st.button("Verify the Response", on_click=verify_response, args=(system_message,))
-    
+
+    except KeyError as ke:
+        logging.error(f"KeyError: Missing expected key - {ke}")
+        st.error(f"A system error occurred: {ke}. Please try again.")
     except Exception as e:
+        logging.exception("An unexpected error occurred")
         st.error(f"An error occurred while processing your query: {e}")
+
 
 def get_verified_data(bot_message):
     """
