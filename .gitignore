@@ -1,32 +1,7 @@
 #Add files for gitignore
-echo "node_modules" >> .gitignore
-echo "dist" >> .gitignore
-echo "coverage" >> .gitignore
-echo "package-lock.json" >> .gitignore
-echo "yarn.lock" >> .gitignore
-echo "yarn-error.log" >> .gitignore
-echo "npm-debug.log" >> .gitignore
-data/.DS_Store
 .DS_Store
-env/*
 .env
-models/architectures/utilities/cache/*
-models/architectures/utilities/cache_news/*
-models/architectures/utilities/data/*
-models/architectures/finetuned_model/*
 finsightai/*
 *.pyc
-FinGPT/20061020_20131126_bloomberg_news.tar
-FinGPT/FinNLP/
-FinGPT/finetuned_model/
-FinGPT/runs/
-data/
-notebooks/.ipynb_checkpoints/
-notebooks/test/*
-notebooks/MNIST/
-
-FinDecide/utilities/cache/*
-FinDecide/utilities/cache_news/*
 *.safetensors
-FinDecide/Test/Test3/finetune/*
 optimizer.pt
