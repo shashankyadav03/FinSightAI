@@ -16,8 +16,9 @@ def get_conversation_chain(vector_store):
         ConversationalRetrievalChain: An initialized conversation chain for querying.
     """
     try:
-        llm = ChatOpenAI(model='gpt-4o-mini', max_tokens=200)
+        llm = ChatOpenAI(model='gpt-4o-mini', max_tokens=512)
         memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+        memory.save_context({"role": "system"}, {"content": "Find information and give it in 2 lines."})
         conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
             retriever=vector_store.as_retriever(),

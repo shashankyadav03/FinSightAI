@@ -14,8 +14,14 @@ def setup_sidebar(chat_placeholder):
         chat_placeholder: A Streamlit placeholder for displaying messages in the chat interface.
     """
     with st.sidebar:
+        if st.button("Start New Chat"):
+            st.session_state.conversation_chain = None
+            st.session_state.chat_history = []
+            st.success("New chat started! Please upload a document to begin.")
+            chat_placeholder.empty()
+        
         st.subheader("Your documents")
-        pdf_docs = st.file_uploader("Upload your documents here", accept_multiple_files=True)
+        pdf_docs = st.file_uploader("Upload your financial documents", accept_multiple_files=True)
 
         if st.button("Process"):
             if pdf_docs:
@@ -32,8 +38,15 @@ def setup_sidebar(chat_placeholder):
                     st.error(f"An error occurred during processing: {e}")
             else:
                 st.warning("Please upload at least one document before processing.")
+        st.write("🤖: OR")
+        if st.button("Process Sample Document"):
+            pdf_docs = ["data/FinSightAI_Report.pdf"]
+            sample_text = get_text_from_pdf(pdf_docs)
+            text_chunks = get_text_chunks(sample_text)
+            vector_store = get_vector_store(text_chunks)
+            st.session_state.conversation_chain = get_conversation_chain(vector_store)
+            st.success("Sample document processed successfully!")
+            chat_placeholder.empty()
+            st.write("🤖: Sample document processed successfully! You can now start asking your questions.")
 
-        if st.button("Start New Chat"):
-            st.session_state.conversation_chain = None
-            st.session_state.chat_history = []
-            st.success("New chat started! Please upload a document to begin.")
+        

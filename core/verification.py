@@ -20,7 +20,7 @@ def get_verified_data(bot_message):
         asset_sector = run_inference(bot_message, "Find one investment sector from the given details. Just give the sector name.")
         news_df = run_news_api(asset_sector)
         prompt_content = f"Current investment strategy: {bot_message}, News: {news_df['title'].tolist()}"
-        output = run_inference(prompt_content, "Update the investment strategy based on the news articles.")
+        output = run_inference(prompt_content, "Update the investment strategy based on the news articles. Give only 3 points.")
         return output, news_df, asset_sector
     except Exception as e:
         raise ValueError(f"An error occurred while verifying the response: {e}")
@@ -62,6 +62,8 @@ def verify_response(bot_message):
                 st.write(f"- {title}")
 
             st.session_state.chat_history.append({"role": "system", "content": "Updated investment strategy: " + f"- {output}"})
+
+            st.markdown("🤖: Please start new chat")
 
     except Exception as e:
         st.error(f"An error occurred during verification: {e}")

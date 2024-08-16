@@ -1,13 +1,11 @@
 import streamlit as st
 import logging
 from core.conversation_chain import get_conversation_chain
-from core.verification import verify_response
 from app.display import display_chat_history
 from services.inference import run_inference
-from services.news_verification import run_news_api
 
 base_prompt = """
-You are a financial advisor chatbot. Your task is to help users with investment strategies...
+You are a financial advisor chatbot. Assist users with investment strategies based on their goals and risk tolerance. Ask questions if needed to understand their financial situation. Provide advice aligned with their preferences, market trends, and investment best practices. Keep it interactive, focused, and concise on asset investment, with up to 2 points per response.
 """
 
 def parse_chat_history(chat_history):
@@ -58,7 +56,7 @@ def handle_user_query(user_query):
             if not parsed_history:
                 system_message = run_inference(user_query, base_prompt)
             else:
-                system_message = run_inference(new_prompt, "Give maximum 2 points per response.")
+                system_message = run_inference(new_prompt, base_prompt)
 
         # Update the chat history with user query and system response
         st.session_state.chat_history.append({"role": "user", "content": user_query})
@@ -66,9 +64,6 @@ def handle_user_query(user_query):
 
         # Display the chat history
         display_chat_history()
-
-        # Provide an option for the user to verify the response
-        st.button("Verify the Response", on_click=verify_response, args=(system_message,))
 
     except KeyError as ke:
         logging.error(f"KeyError: Missing expected key - {ke}")
