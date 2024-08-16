@@ -1,6 +1,5 @@
 transformers
 pandas
-torch
 streamlit
 python-dotenv
 PyPDF2
@@ -8,11 +7,7 @@ langchain-community
 langchain
 openai
 faiss-cpu
-altair
-tiktoken
 huggingface_hub
-pyth
 langchain_openai
-lora
 sentence-transformers
 langchain_huggingface

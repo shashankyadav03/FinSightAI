@@ -1,7 +1,7 @@
 #Add files for gitignore
 .DS_Store
 .env
-finsightai/*
+myenv/*
 *.pyc
 *.safetensors
 optimizer.pt
