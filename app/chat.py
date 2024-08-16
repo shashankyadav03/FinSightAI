@@ -3,10 +3,28 @@ import logging
 from core.conversation_chain import get_conversation_chain
 from core.verification import verify_response
 from app.display import display_chat_history
+from services.inference import run_inference
+from services.news_verification import run_news_api
 
 base_prompt = """
 You are a financial advisor chatbot. Your task is to help users with investment strategies...
 """
+
+def parse_chat_history(chat_history):
+    """
+    Parses the chat history to display the conversation in a readable format.
+
+    Args:
+        chat_history (list): The chat history containing user and system messages.
+
+    Returns:
+        str: The parsed chat history as a string.
+    """
+    parsed_history = ""
+    for message in chat_history:
+        role = "User" if message['role'] == "user" else "System"
+        parsed_history += f"{role}: {message['content']}\n"
+    return parsed_history
 
 def handle_user_query(user_query):
     """
@@ -38,9 +56,9 @@ def handle_user_query(user_query):
             parsed_history = parse_chat_history(st.session_state.chat_history)
             new_prompt = f"Focus on current prompt: {user_query}\n The chat history is as follows just take this as context: {parsed_history}"
             if not parsed_history:
-                system_message = run_openai_api(user_query, base_prompt)
+                system_message = run_inference(user_query, base_prompt)
             else:
-                system_message = run_openai_api(new_prompt, "Give maximum 2 points per response.")
+                system_message = run_inference(new_prompt, "Give maximum 2 points per response.")
 
         # Update the chat history with user query and system response
         st.session_state.chat_history.append({"role": "user", "content": user_query})

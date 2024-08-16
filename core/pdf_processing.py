@@ -1,4 +1,5 @@
 from PyPDF2 import PdfReader
+from langchain.text_splitter import CharacterTextSplitter
 
 def get_text_from_pdf(pdf_docs):
     """

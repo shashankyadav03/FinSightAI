@@ -1,6 +1,6 @@
 import streamlit as st
-from get_news import run_news_api
-from llm_response import run_openai_api
+from services.news_verification import run_news_api
+from services.inference import run_inference
 
 def get_verified_data(bot_message):
     """
@@ -17,10 +17,10 @@ def get_verified_data(bot_message):
         tuple: Updated investment strategy, DataFrame of news articles, and the extracted sector.
     """
     try:
-        asset_sector = run_openai_api(bot_message, "Find one investment sector from the given details. Just give the sector name.")
+        asset_sector = run_inference(bot_message, "Find one investment sector from the given details. Just give the sector name.")
         news_df = run_news_api(asset_sector)
         prompt_content = f"Current investment strategy: {bot_message}, News: {news_df['title'].tolist()}"
-        output = run_openai_api(prompt_content, "Update the investment strategy based on the news articles.")
+        output = run_inference(prompt_content, "Update the investment strategy based on the news articles.")
         return output, news_df, asset_sector
     except Exception as e:
         raise ValueError(f"An error occurred while verifying the response: {e}")
