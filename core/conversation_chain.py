@@ -18,7 +18,7 @@ def get_conversation_chain(vector_store):
     try:
         llm = ChatOpenAI(model='gpt-4o-mini', max_tokens=512)
         memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-        memory.save_context({"role": "system"}, {"content": "Find information and give it in 2 lines."})
+        memory.save_context({"role": "system"}, {"content": "Find information and give it in 2 lines in english."})
         conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=llm,
             retriever=vector_store.as_retriever(),
