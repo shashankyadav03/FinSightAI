@@ -11,3 +11,4 @@ huggingface_hub
 langchain_openai
 sentence-transformers
 langchain_huggingface
+

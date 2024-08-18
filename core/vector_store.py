@@ -15,7 +15,7 @@ def get_vector_store(text_chunks):
         FAISS: A FAISS vector store object containing the text embeddings.
     """
     try:
-        embeddings = OpenAIEmbeddings()
+        embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
         vector_store = FAISS.from_texts(embedding=embeddings, texts=text_chunks)
         return vector_store
     except Exception as e:
