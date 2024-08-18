@@ -4,6 +4,7 @@ import os
 import hashlib
 import logging
 from services.dotenv_loader import load_environment
+from requests.exceptions import HTTPError, RequestException
 
 # Initialize the logger
 log = logging.getLogger(__name__)
@@ -180,6 +181,91 @@ def openai_api(prompt_content, system_message):
 
     return get_message_content(data)
 
+import requests
+from requests.exceptions import HTTPError, RequestException
+
+def query_huggingface_endpoint(payload, api_url, token):
+    """
+    Calls a Hugging Face Inference Endpoint with the given payload.
+
+    Parameters:
+    - payload (dict): The JSON payload to be sent to the Hugging Face API.
+    - api_url (str): The full URL of the Hugging Face Inference Endpoint.
+    - token (str): The Bearer token for authenticating the request.
+
+    Returns:
+    - dict: The JSON response from the Hugging Face API if successful.
+    - None: If the request fails due to an HTTP or network-related error.
+    
+    Raises:
+    - ValueError: If any of the required parameters are missing or invalid.
+    """
+
+    # Input validation
+    if not payload or not api_url or not token:
+        raise ValueError("Payload, API URL, and token must be provided")
+
+    # Prepare the headers for the request
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Make the POST request to the Hugging Face endpoint
+        response = requests.post(api_url, headers=headers, json=payload)
+        
+        # Raise an exception for HTTP errors (4xx and 5xx)
+        response.raise_for_status()
+        
+        # Return the JSON response from the API
+        return response.json()
+    
+    except HTTPError as http_err:
+        # Handle HTTP errors
+        print(f"HTTP error occurred: {http_err}")
+    
+    except RequestException as req_err:
+        # Handle network-related errors
+        print(f"Request error occurred: {req_err}")
+    
+    except Exception as err:
+        # Handle any other errors
+        print(f"An error occurred: {err}")
+    
+    # If any error occurs, return None
+    return None
+
+
+def inference_huggingface(prompt_content, system_message):
+    """
+    Runs the inference process by interacting with the Hugging Face API.
+
+    Args:
+        prompt_content (str): The user's input message.
+        system_message (str): The system message providing context or instructions.
+
+    Returns:
+        str: The content of the message returned by the API.
+    """
+    API_URL = "https://aizvierx2xbiac7h.us-east-1.aws.endpoints.huggingface.cloud"
+    text = f"Prompt: {prompt_content}\nSystem: {system_message}"
+    payload = {
+        "inputs": text,
+        "parameters": {}
+    }
+    load_environment() 
+    API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+    # Call the function and print the result
+    result = query_huggingface_endpoint(payload, API_URL, API_TOKEN)
+    print(result)
+
+    log.info(f"Running inference with prompt: {text}")
+    message_content = result[0].get('generated_text')
+    log.info(f"Inference result: {message_content}")
+    return message_content
+   
 def run_inference(prompt_content, system_message):
     """
     Runs the inference process by interacting with the OpenAI API.
@@ -192,7 +278,8 @@ def run_inference(prompt_content, system_message):
         str: The content of the message returned by the API.
     """
     log.info(f"Running inference with prompt: {prompt_content}")
+    # message_content = inference_huggingface(prompt_content, system_message)
+
     message_content = openai_api(prompt_content, system_message)
     log.info(f"Inference result: {message_content}")
     return message_content
-
