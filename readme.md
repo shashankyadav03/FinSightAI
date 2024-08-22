@@ -5,7 +5,7 @@
 FinSightAI is at the forefront of combining advanced AI technology with user-friendly applications to deliver personalized financial advice. Based on the LLaMA 8B Instruct Model and enhanced through LoRA (Low-Rank Adaptation), this project integrates robust AI capabilities into a Streamlit app to offer real-time, tailored financial recommendations, focusing on asset allocation strategies using the finance-specific 'finance-alpaca' dataset.
 
 ## Key Features
-- **Personalized Financial Recommendations**: Utilizes fine-tuned LLaMA 8B model to generate asset allocation advice specific to user inputs.
+- **Personalised Financial Recommendations**: Utilizes fine-tuned LLaMA 8B model to generate asset allocation advice specific to user inputs.
 - **Efficient AI Modeling**: Incorporates LoRA fine-tuning for optimal balance between computational efficiency and deep learning performance.
 - **Interactive Streamlit Application**: Provides a conversational interface for users to interact with the AI, ask financial questions, and receive instant advice.
 - **Real-Time Data Verification**: Enhances trust by allowing users to verify AI-generated advice against real-time market data.
